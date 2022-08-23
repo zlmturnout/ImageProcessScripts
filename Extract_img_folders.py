@@ -30,7 +30,7 @@ def extract_pic_folder(src_path, dst_path,pic_list,filetype=None):
     if not os.path.isdir(dst_path):
         dst_path = os.getcwd()
     save_path = create_path(dst_path)
-    upper_path, folder_name = os.path.split(dst_path)
+    upper_path, folder_name = os.path.split(src_path)
     if not os.listdir(src_path):
         return []
     else:
@@ -41,16 +41,15 @@ def extract_pic_folder(src_path, dst_path,pic_list,filetype=None):
                 filename, extension = os.path.splitext(item)
                 if extension in filetype:
                     # origin image abs_path
-                    origin_pic_path = os.path.join(folder_path,item)
+                    origin_pic_path = folder_path
                     All_pics_N += 1
                     # create new image  folder and get abs_path
                     save_folder_path=create_path(os.path.join(dst_path,folder_name))
                     new_pic_path=os.path.join(save_folder_path,str(All_pics_N)+extension)
-                    #print(f'origin_pic: {origin_pic_path},new_pic: {new_pic_path}')
-                    # copy image file to dst_path/folder_name
-                    #shutil.copy(origin_pic_path, new_pic_path)
-                    #print(f'move origin_pic: {origin_pic_path} to new path\n new_pic: {new_pic_path}')
-                    # index_pic += 1
+                    print(f'origin_pic: {origin_pic_path},new_pic: {new_pic_path}')
+                    #copy image file to dst_path/folder_name
+                    shutil.copy(origin_pic_path, new_pic_path)
+                    print(f'move origin_pic: {origin_pic_path} to new path\n new_pic: {new_pic_path}')
                     pic_list.append(item)
             elif os.path.isdir(folder_path):
                 extract_pic_folder(folder_path,dst_path,pic_list)
@@ -58,8 +57,9 @@ def extract_pic_folder(src_path, dst_path,pic_list,filetype=None):
 
                 
 if __name__ == "__main__":
-    download_path = r'F:\BeautifulPictures'
-    save_path = r'F:\Perilous\IMGs'
+    #download_path = r'F:\BeautifulPictures'
+    download_path=r'E:\迅雷下载\MaryMoody'
+    save_path = r'F:\Beautyleg'
     pic_list=extract_pic_folder(download_path,save_path,[])
     print(f'get all pics:{pic_list} with number {len(pic_list)}')
     

@@ -56,9 +56,6 @@ def copy_pic_folder(src_path, dst_path, filetype=None):
                     shutil.copy(origin_pic_path, new_pic_path)
                     print(f'move origin_pic: {origin_pic_path} to new path\n new_pic: {new_pic_path}')
                     index_pic += 1
-
-
-
     ## full pic
     print(f'number of pics: {num_pics}')
 
