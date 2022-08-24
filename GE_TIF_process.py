@@ -1,10 +1,15 @@
 import time, random, sys, os, math
 from PIL import Image
+from scipy import misc
+from PIL import Image
 import pandas as pd
 import numpy as np
 from PySide6.QtWidgets import QFileDialog
 import tkinter as tk
 from tkinter import filedialog
+import matplotlib.cm as cm
+import matplotlib.pyplot as plt
+import cv2
 
 # for tinker interface
 root = tk.Tk()
@@ -18,20 +23,58 @@ def open_tif_img(img_path:str=None):
     img_data = np.array([])
     if  not img_path or not os.path.isdir(img_path):
         img_path='/'
-    filename = filedialog.askopenfilename(initialdir = img_path,title = "Select tif file",filetypes = (("jpeg files","*.jpg"),("tif file","*.tif")))
+    filename = filedialog.askopenfilename(initialdir = img_path,title = "Select tif file",filetypes = (("tif file","*.tif"),("jpeg files","*.jpg")))
     print(f'get file: {filename}')
     foldername, filetype=os.path.splitext(filename)
     print(foldername, filetype)
     if os.path.isfile(filename) and filename.endswith('.tif'):
         img = Image.open(filename)
-        img_data = np.array(img)
+        img_data = np.array(img,dtype=np.float32)
         print(f'shape of the read img={np.shape(img_data)}')
     return filename, img_data
+
+def cv2_filter_img(img_data=np.array([])):
+    #img=cv2.cvtColor(img_data,cv2.CV_32F)
+    # 均值滤波
+    # 用3*3的核对图片进行卷积操作，核上的参数都是1/9，达到均值的效果
+    blur = cv2.blur(img_data, (3, 3))
+    # 方框滤波（归一化）=均值滤波
+    box1 = cv2.boxFilter(img_data, -1, (3, 3), normalize=True)
+    # 方框滤波（不归一化）
+    #box2 = cv2.boxFilter(img_data, -1, (3, 3), normalize=False)
+    # 高斯滤波
+    # 用5*5的核进行卷积操作，但核上离中心像素近的参数大。
+    guassian = cv2.GaussianBlur(img_data, (5, 5), 1)
+    # 中值滤波
+    # 将某像素点周围5*5的像素点提取出来，排序，取中值写入此像素点。
+    mean3 = cv2.medianBlur(img_data, 3)
+    mean5 = cv2.medianBlur(img_data, 5)
+
+    # 展示效果
+    titles = ['Original figure', 'blur', 'box_norm', 'guassian','mean3','mean5']
+    images = [img_data, blur, box1, guassian,mean3,mean5]
+    for i in range(6):
+        #plt.subplot(3, 2, i+1), plt.imshow(images[i],cmap=cm.rainbow,vmax=1400,vmin=1200)
+        plt.figure(f'{titles[i]}'), plt.imshow(images[i],cmap=cm.rainbow,vmax=1400,vmin=1250)
+        #plt.title(titles[i])
+        #plt.xticks([]), plt.yticks([])
+    plt.show()
+
 
 if __name__ == "__main__":
     #download_path = r'F:\BeautifulPictures'
     download_path=r'E:\迅雷下载\MaryMoody'
     save_path = r'F:\Beautyleg'
     img_path=r'E:\areaDetector\saved data'
+    tif_path=r'E:/areaDetector/saved data/20220822/GR-X-7670-600s_line .tif'
     tif_file, img_data=open_tif_img(img_path)
-    print(f'get tif pic:{tif_file} with image date {img_data}')
+    pd_img=pd.DataFrame(img_data)
+    #print(f'get tif pic:{tif_file} with image date {pd_img}')
+    img_series=img_data.flatten()
+    pd_img_series=pd.DataFrame(img_series)
+    cv2_filter_img(img_data)
+    # plt.imshow(img_data,cmap=cm.rainbow,vmax=1400,vmin=1200)
+    # #pd_img_series.plot.kde()
+    # print(img_series)
+    # plt.show()
+    
