@@ -10,6 +10,7 @@ from tkinter import filedialog
 import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import cv2
+from tifffile import TiffFile,tifffile
 
 # for tinker interface
 root = tk.Tk()
@@ -60,6 +61,38 @@ def cv2_filter_img(img_data=np.array([])):
         #plt.xticks([]), plt.yticks([])
     plt.show()
 
+def cv2_mean_filter(img_file:str,filter_N:int=3):
+    """_summary_
+    filter the input tif image by cv2.medianBlur and save 
+    Args:
+        img_file (str): tif_img file
+        filter_N (int): cv2 medianblur parameter 3,5,7... Defaults to 3.
+    """
+    if os.path.isfile(img_file) and img_file.endswith('.tif'):
+        img = Image.open(img_file)
+        img_data = np.array(img,dtype=np.float32)
+        print(f'shape of the read img={np.shape(img_data)}')
+        mean_img=cv2.medianBlur(img_data, filter_N)
+        titles=["origin","Medianblur"]
+        plt.subplot(1, 2, 1),plt.imshow(img_data,cmap=cm.rainbow,vmax=620,vmin=600)
+        plt.title("origin")
+        plt.subplot(1, 2, 2),plt.imshow(mean_img,cmap=cm.rainbow,vmax=620,vmin=600)
+        plt.title("Medianblur")
+        plt.show()
+        # save to tif image
+        filename = filedialog.asksaveasfilename(title=u'保存tif图片', filetypes=[("tiff", ".tif")])
+        save_tif_data(f'{filename}.tif',np.array(mean_img,dtype=np.float32))
+
+def save_tif_data(filename:str,img_data:np.array([])):
+        """
+        save data in the main figure box
+        :return:
+        """
+        if filename.endswith('.tif'):
+            tifffile.imsave(filename, img_data)
+
+
+
 
 if __name__ == "__main__":
     #download_path = r'F:\BeautifulPictures'
@@ -72,7 +105,8 @@ if __name__ == "__main__":
     #print(f'get tif pic:{tif_file} with image date {pd_img}')
     img_series=img_data.flatten()
     pd_img_series=pd.DataFrame(img_series)
-    cv2_filter_img(img_data)
+    #cv2_filter_img(img_data)
+    cv2_mean_filter(tif_file)
     # plt.imshow(img_data,cmap=cm.rainbow,vmax=1400,vmin=1200)
     # #pd_img_series.plot.kde()
     # print(img_series)
