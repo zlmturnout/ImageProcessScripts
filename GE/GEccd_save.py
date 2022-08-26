@@ -1,4 +1,4 @@
-from sympy import im
+#from sympy import im
 import numpy as np
 import matplotlib.pyplot as plt
 import tkinter,time
@@ -95,7 +95,8 @@ if extract_background:
         if background_aqn_time:
             matrix -= np.array(ExposureTime) * background \
                 / background_aqn_time """
-matrix1 = matrix.T
+#matrix1 = matrix.T
+matrix1 = matrix
 
 
 thresholdUP = 0.9

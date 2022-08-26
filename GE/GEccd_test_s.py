@@ -79,6 +79,7 @@ if extract_background:
             matrix -= np.array(ExposureTime) * background \
                 / background_aqn_time """
 matrix1 = matrix.T
+#matrix1 = matrix
 
 thresholdUP = 0.9
 thresholdDOWN = 0.1
