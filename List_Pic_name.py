@@ -15,7 +15,7 @@ def get_datetime():
 
     """
     timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
-    print(timestamp)
+    #print(timestamp)
     # return str(datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
     return timestamp
 
