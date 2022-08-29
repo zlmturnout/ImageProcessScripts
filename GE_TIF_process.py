@@ -74,9 +74,9 @@ def cv2_mean_filter(img_file:str,filter_N:int=3):
         print(f'shape of the read img={np.shape(img_data)}')
         mean_img=cv2.medianBlur(img_data, filter_N)
         titles=["origin","Medianblur"]
-        plt.subplot(1, 2, 1),plt.imshow(img_data,cmap=cm.rainbow,vmax=620,vmin=600)
+        plt.subplot(1, 2, 1),plt.imshow(img_data,cmap=cm.rainbow,vmin=1300,vmax=1400)
         plt.title("origin")
-        plt.subplot(1, 2, 2),plt.imshow(mean_img,cmap=cm.rainbow,vmax=620,vmin=600)
+        plt.subplot(1, 2, 2),plt.imshow(mean_img,cmap=cm.rainbow,vmin=1300,vmax=1400)
         plt.title("Medianblur")
         plt.show()
         # save to tif image
