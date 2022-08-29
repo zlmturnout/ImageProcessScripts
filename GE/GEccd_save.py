@@ -9,6 +9,7 @@ from PIL import Image
 import csv
 from scipy import interpolate
 import matplotlib.cm as cm
+import cv2
 
 info = {}
 info['element'] = 'C'
@@ -79,7 +80,8 @@ t1 = time.time()
 #matrix = mpimage.imread(img_path).astype('float64')
 # add by limin
 img = Image.open(img_path)
-matrix = np.array(img,dtype=np.float32).T
+matrix = np.array(img,dtype=np.float32)
+
 #background = mpimage.imread(bg_path).astype('float64')
 #matrix1 = matrix1.T
 
@@ -94,17 +96,24 @@ if extract_background:
         if background_aqn_time:
             matrix -= np.array(ExposureTime) * background \
                 / background_aqn_time """
-matrix1 = matrix.T
+cut_matrix=matrix[:,1000:1600].T 
+plt.subplot(3,1,1),plt.imshow(cut_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.colorbar(location='bottom', fraction=0.1),plt.title("cut raw image")
+
+#matrix1 = matrix.T
+filter_N=5
+mean_matrix=cv2.medianBlur(cut_matrix, filter_N)
 #matrix1 = matrix
-plt.subplot(1,2,1),plt.imshow(matrix1,cmap=cm.rainbow,vmin=1300,vmax=1400)
-plt.colorbar(location='bottom', fraction=0.05),plt.title("raw image")
+plt.subplot(3,1,2),plt.imshow(mean_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.colorbar(location='bottom', fraction=0.1),plt.title("median blur image")
 
 thresholdUP = 0.9
 thresholdDOWN = 0.1
-matrix1 = detectorclean(matrix1, noise1=50, noise2=100)
+matrix1 = detectorclean(mean_matrix, noise1=50, noise2=100)
 print(type(matrix1),matrix1.shape)
 m, n, out = clear_bg(matrix1)
-matrix2 = out
+#matrix2 = out
+matrix2 = mean_matrix
 new_img = np.zeros((m,n))
 '''
 plt.subplot(1,1,1)
@@ -113,12 +122,12 @@ plt.show()
 '''
 
 
-plt.subplot(1,2,2),plt.imshow(out,cmap=cm.rainbow,vmin=0,vmax=100),plt.title("clear background")
-plt.colorbar(location='bottom', fraction=0.05)
+plt.subplot(3,1,3),plt.imshow(out,cmap=cm.rainbow,vmin=0,vmax=100),plt.title("clear background")
+plt.colorbar(location='bottom', fraction=0.1)
 plt.show()
 
 j=5
-index = 564
+index = 300
 
 k = 0.4 + j*0.1 +j**2*(1e-07)
 low_lim = round(index*20 - 1200)
