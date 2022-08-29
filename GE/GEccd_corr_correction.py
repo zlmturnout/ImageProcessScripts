@@ -5,6 +5,7 @@ from tkinter import *
 from tkinter.filedialog import askopenfilename
 import matplotlib.image as mpimage
 import csv
+from PIL import Image
 
 
 info = {}
@@ -66,13 +67,17 @@ root = Tk()
 root.withdraw()
 root.update()
 img_path = askopenfilename(title=u'Read CCD image')
+
 #bg_path = askopenfilename(title=u'Read background image')
 root.destroy()
 
 #img_path = r'D:\eline\REXS\code\data\spe2\Archive\align_1018\align17sept_1.tif'
 #bg_path = r'D:\eline\REXS\code\data\20211215\-10degree_01_BGR_BGR.tif'
 
-matrix= mpimage.imread(img_path).astype('float64')
+#matrix= mpimage.imread(img_path).astype('float64')
+# add by limin
+img = Image.open(img_path)
+matrix = np.array(img,dtype=np.float32)
 #background = mpimage.imread(bg_path).astype('float64')
 print(matrix.shape)
 
