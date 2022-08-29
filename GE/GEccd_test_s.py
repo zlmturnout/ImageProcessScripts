@@ -60,7 +60,7 @@ root.destroy()
 #img= mpimage.imread(img_path).astype('float64')
 # add by limin
 img = Image.open(img_path)
-matrix = np.array(img,dtype=np.float32).T
+matrix = np.array(img,dtype=np.float32)
 #background = mpimage.imread(bg_path).astype('float64')
 '''
 matrix1 = mpimage.imread(img_path).T
@@ -78,6 +78,7 @@ if extract_background:
         if background_aqn_time:
             matrix -= np.array(ExposureTime) * background \
                 / background_aqn_time """
+         
 matrix1 = matrix.T
 #matrix1 = matrix
 
