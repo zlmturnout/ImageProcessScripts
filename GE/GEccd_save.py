@@ -1,3 +1,7 @@
+<<<<<<< HEAD
+=======
+#from sympy import im
+>>>>>>> 5a591c0518e10525687abaa7110172bfc34ca997
 import numpy as np
 import matplotlib.pyplot as plt
 import tkinter,time
@@ -95,23 +99,24 @@ if extract_background:
             matrix -= np.array(ExposureTime) * background \
                 / background_aqn_time """
 matrix1 = matrix.T
+#matrix1 = matrix
 
 
 thresholdUP = 0.9
 thresholdDOWN = 0.1
-matrix1 = detectorclean(matrix1, noise1=50, noise2=100)
+matrix1 = detectorclean(matrix1, noise1=1000, noise2=1500)
 print(type(matrix1),matrix1.shape)
 m, n, out = clear_bg(matrix1)
 matrix2 = out
 new_img = np.zeros((m,n))
 '''
-plt.subplot(2,1,2)
+plt.subplot(1,1,1)
 plt.imshow(matrix)
 plt.show()
 '''
 
-j=6
-index = 300
+j=5
+index = 1600
 
 k = 0.4 + j*0.1 +j**2*(1e-07)
 low_lim = round(index*20 - 1200)
@@ -138,7 +143,7 @@ fileout1 = xinitial[round(low_lim/20):round(high_lim/20)]
 fileout2 = y_[round(low_lim/20):round(high_lim/20)]
 fileout = np.array([fileout1, fileout2]).T
 plt.plot(xinitial[round(low_lim/20):round(high_lim/20)],
-        y_[round(low_lim/20):round(high_lim/20)], '.-')
+            y_[round(low_lim/20):round(high_lim/20)], '.-')
 plt.pause(0.5)
 
 plt.show()
