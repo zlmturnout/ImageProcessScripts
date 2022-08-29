@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-=======
-#from sympy import im
->>>>>>> 5a591c0518e10525687abaa7110172bfc34ca997
 import numpy as np
 import matplotlib.pyplot as plt
 import tkinter,time
