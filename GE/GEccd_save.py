@@ -8,7 +8,7 @@ from PIL import Image
 # coding: utf-8
 import csv
 from scipy import interpolate
-
+import matplotlib.cm as cm
 
 info = {}
 info['element'] = 'C'
@@ -96,11 +96,12 @@ if extract_background:
                 / background_aqn_time """
 matrix1 = matrix.T
 #matrix1 = matrix
-
+plt.subplot(1,2,1),plt.imshow(matrix1,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.colorbar(location='bottom', fraction=0.05),plt.title("raw image")
 
 thresholdUP = 0.9
 thresholdDOWN = 0.1
-matrix1 = detectorclean(matrix1, noise1=1000, noise2=1500)
+matrix1 = detectorclean(matrix1, noise1=50, noise2=100)
 print(type(matrix1),matrix1.shape)
 m, n, out = clear_bg(matrix1)
 matrix2 = out
@@ -111,8 +112,13 @@ plt.imshow(matrix)
 plt.show()
 '''
 
-j=5
-index = 1600
+
+plt.subplot(1,2,2),plt.imshow(out,cmap=cm.rainbow,vmin=0,vmax=100),plt.title("clear background")
+plt.colorbar(location='bottom', fraction=0.05)
+plt.show()
+
+j=6
+index = 1100
 
 k = 0.4 + j*0.1 +j**2*(1e-07)
 low_lim = round(index*20 - 1200)
@@ -126,7 +132,6 @@ xinterp = np.arange(0, n, 0.05)
 xx = np.linspace(0, len(xinterp), n)
 for ii in range(m):
     temp = matrix2[ii, :]
-        
     ntemp = fastinterp1(xinitial, temp, xinterp)
     dd = round(k*ii)
     new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)

@@ -87,7 +87,7 @@ matrix1 = detectorclean(matrix1, noise1=50, noise2=100)
 m, n, out = clear_bg(matrix1)
 matrix = out
 #m2 = round(m/2)
-index = 1600
+index = 1700
 print(index)
 new_img = np.zeros((m,n))
 for j in range(1,10,1):

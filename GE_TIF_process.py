@@ -76,8 +76,10 @@ def cv2_mean_filter(img_file:str,filter_N:int=3):
         titles=["origin","Medianblur"]
         plt.subplot(1, 2, 1),plt.imshow(img_data,cmap=cm.rainbow,vmin=1300,vmax=1400)
         plt.title("origin")
+        plt.colorbar(location='bottom', fraction=0.05)
         plt.subplot(1, 2, 2),plt.imshow(mean_img,cmap=cm.rainbow,vmin=1300,vmax=1400)
         plt.title("Medianblur")
+        plt.colorbar(location='bottom', fraction=0.05)
         plt.show()
         # save to tif image
         filename = filedialog.asksaveasfilename(title=u'保存tif图片', filetypes=[("tiff", ".tif")])
