@@ -117,8 +117,8 @@ plt.subplot(1,2,2),plt.imshow(out,cmap=cm.rainbow,vmin=0,vmax=100),plt.title("cl
 plt.colorbar(location='bottom', fraction=0.05)
 plt.show()
 
-j=6
-index = 1100
+j=5
+index = 564
 
 k = 0.4 + j*0.1 +j**2*(1e-07)
 low_lim = round(index*20 - 1200)
@@ -134,18 +134,19 @@ for ii in range(m):
     temp = matrix2[ii, :]
     ntemp = fastinterp1(xinitial, temp, xinterp)
     dd = round(k*ii)
-    new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
+    #new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
     #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
     #new_img = f(xx)
     result = result + ntemp[low_lim-dd:high_lim-dd]
-    
+print(result)
 y_ = fastinterp1(new_X, result, xx)
-fileout1 = xinitial[round(low_lim/20):round(high_lim/20)]
-fileout2 = y_[round(low_lim/20):round(high_lim/20)]
-fileout = np.array([fileout1, fileout2]).T
 plt.plot(xinitial[round(low_lim/20):round(high_lim/20)],
             y_[round(low_lim/20):round(high_lim/20)], '.-')
 plt.pause(0.5)
+fileout1 = xinitial[round(low_lim/20):round(high_lim/20)]
+fileout2 = y_[round(low_lim/20):round(high_lim/20)]
+fileout = np.array([fileout1, fileout2]).T
+
 
 plt.show()
 

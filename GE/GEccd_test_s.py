@@ -60,7 +60,7 @@ root.destroy()
 #img= mpimage.imread(img_path).astype('float64')
 # add by limin
 img = Image.open(img_path)
-matrix = np.array(img,dtype=np.float32)
+matrix = np.array(img,dtype=np.float32).T
 #background = mpimage.imread(bg_path).astype('float64')
 '''
 matrix1 = mpimage.imread(img_path).T
@@ -85,12 +85,40 @@ thresholdUP = 0.9
 thresholdDOWN = 0.1
 matrix1 = detectorclean(matrix1, noise1=50, noise2=100)
 m, n, out = clear_bg(matrix1)
-matrix = out
+matrix2 = out
 #m2 = round(m/2)
-index = 1700
+index = 564
 print(index)
 new_img = np.zeros((m,n))
-for j in range(1,10,1):
+
+# test
+j=5
+k = 0.4 + j*0.1+j**2*(1e-07)
+low_lim = round(index*20 -1200)
+high_lim = round(index*20 + 1200)
+#low_lim = 3640
+#high_lim = 14640
+new_X = np.arange(low_lim, high_lim)
+result = np.zeros(len(new_X))
+xinitial = np.arange(n)
+xinterp = np.arange(0, n, 0.05)
+xx = np.linspace(0, len(xinterp), n)
+for ii in range(m):
+    temp = matrix2[ii, :]
+    ntemp = fastinterp1(xinitial, temp, xinterp)
+    dd = round(k*ii)
+    #new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
+    #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
+    #new_img = f(xx)
+    result = result + ntemp[low_lim-dd:high_lim-dd]
+print(result)
+y_ = fastinterp1(new_X, result, xx)
+plt.plot(xinitial[round(low_lim/20):round(high_lim/20)],\
+            y_[round(low_lim/20):round(high_lim/20)], '.-')
+plt.pause(0.5)
+
+'''
+for j in range(5,6,1):
     k = 0.4 + j*0.1+j**2*(1e-07)
     
     low_lim = round(index*20 -1200)
@@ -110,10 +138,11 @@ for j in range(1,10,1):
         #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
         #new_img = f(xx)
         result = result + ntemp[low_lim-dd:high_lim-dd]
-    
+    print(result)
     y_ = fastinterp1(new_X, result, xx)
-    plt.plot(xinitial[round(low_lim/20):round(high_lim/20)],\
-            y_[round(low_lim/20):round(high_lim/20)])
+    plt.plot(xinitial[round(low_lim/20):round(high_lim/20)],\y_[round(low_lim/20):round(high_lim/20)], '.-')
     plt.pause(0.5)
+'''
+
 plt.show()
 
