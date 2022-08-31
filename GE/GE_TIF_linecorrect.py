@@ -67,6 +67,16 @@ print(f'save folder: {save_folder}\n filename:{filename}, type:{extension}')
 img = Image.open(img_path)
 matrix = np.array(img,dtype=np.float32)
 #background = mpimage.imread(bg_path).astype('float64')
+fig1 = plt.figure(figsize =(16, 9))
+fig1.canvas.manager.window.setWindowTitle("Visualize raw image")
+plt.subplot(2,2,1),plt.imshow(matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.colorbar(location='right', fraction=0.1),plt.title("raw image")
+sum_rows_raw=np.sum(matrix,axis=0)
+row_index=[i for i in range(len(sum_rows_raw)) ]
+sum_cols_raw=np.sum(matrix,axis=1)
+col_index=[j for j in range(len(sum_cols_raw)) ]
+plt.subplot(2,2,3),plt.plot(row_index,sum_rows_raw),plt.title("sum cols")
+plt.subplot(2,2,2),plt.plot(col_index,sum_cols_raw),plt.title("sum rows")
 '''
 matrix1 = mpimage.imread(img_path).T
 matrix1 = matrix1[:,:200]
@@ -85,27 +95,39 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1660
-p_row=1061
+p_col=1034
+p_row=1042
 half_n=500   # total 2*half_n rows for correction
 
 header_list=['pixels']
 
 
 cut_matrix=matrix[:,p_col-half_n:p_col+half_n].T 
-fig1 = plt.figure(figsize =(16, 9)) 
-fig1.canvas.manager.window.setWindowTitle("image data preprocess")
-plt.subplot(2,3,1),plt.imshow(cut_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+fig2 = plt.figure(figsize =(16, 9)) 
+fig2.canvas.manager.window.setWindowTitle("image data preprocess")
+plt.subplot(3,3,1),plt.imshow(cut_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
 plt.colorbar(location='bottom', fraction=0.1),plt.title("cut raw image")
-plt.subplot(2,3,4),plt.hist(cut_matrix.flatten(),bins=100)
+plt.subplot(3,3,4),plt.hist(cut_matrix.flatten(),bins=100),plt.title("intensity histogram")
+# sum columm plot
+sum_rows_cut=np.sum(cut_matrix,axis=0)
+row_index=[i for i in range(len(sum_rows_cut)) ]
+sum_cols_cut=np.sum(cut_matrix,axis=1)
+col_index=[j for j in range(len(sum_cols_cut)) ]
+plt.subplot(3,3,7),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 
 #matrix1 = matrix.T
-filter_N=5
+filter_N=3
 mean_matrix=cv2.medianBlur(cut_matrix, filter_N)
+#mean_matrix = cv2.boxFilter(cut_matrix, -1, (3, 3), normalize=True)
+#mean_matrix = cv2.GaussianBlur(cut_matrix, (5, 5), 1)
 #matrix1 = matrix
-plt.subplot(2,3,2),plt.imshow(mean_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.subplot(3,3,2),plt.imshow(mean_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
 plt.colorbar(location='bottom', fraction=0.1),plt.title("median blur image")
-plt.subplot(2,3,5),plt.hist(mean_matrix.flatten(),bins=200)
+plt.subplot(3,3,5),plt.hist(mean_matrix.flatten(),bins=200),plt.title("intensity histogram")
+sum_cols_cut=np.sum(mean_matrix,axis=1)
+col_index=[j for j in range(len(sum_cols_cut)) ]
+plt.subplot(3,3,8),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
+
 
 thresholdUP = 0.9
 thresholdDOWN = 0.1
@@ -113,9 +135,12 @@ matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
 print(type(matrix1),matrix1.shape)
 m, n, out = clear_bg(matrix1)
 print(f'row: {m}\ncolumn: {n}')
-plt.subplot(2,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=-25,vmax=25),plt.title("clear background")
+plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=-25,vmax=25),plt.title("clear background")
 plt.colorbar(location='bottom', fraction=0.1)
-plt.subplot(2,3,6),plt.hist(out.flatten(),bins=200)
+plt.subplot(3,3,6),plt.hist(out.flatten(),bins=200),plt.title("intensity histogram")
+sum_cols_cut=np.sum(out.T,axis=1)
+col_index=[j for j in range(len(sum_cols_cut)) ]
+plt.subplot(3,3,9),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 #plt.show()
 
 # line correction
@@ -131,13 +156,13 @@ plt.show()
 index=half_n
 corrected_list=[]
 # left move rows, dd = round(k*ii)
-fig2 = plt.figure(figsize =(16, 9))
-fig2.canvas.manager.window.setWindowTitle("Visualize peak correction")
+fig3 = plt.figure(figsize =(16, 9))
+fig3.canvas.manager.window.setWindowTitle("Visualize peak correction")
 low_lim = round(index*20 -1200)
 high_lim = round(index*20 + 1200)
 xinitial = np.arange(n)
 corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_col)
-for j in range(0,10,1):
+for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     k = 0.05 + j*0.1+j**2*(1e-07)
     low_lim = round(index*20 -1200)
@@ -171,7 +196,7 @@ for j in range(0,10,1):
 plt.legend([i for i in range(10)])
 
 # right move rows, dd = -round(k*ii)
-for j in range(0,10,1):
+for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     k = 0.05 + j*0.1+j**2*(1e-07)
     low_lim = round(index*20 -1200)
