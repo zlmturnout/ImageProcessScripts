@@ -108,6 +108,29 @@ def interp_derivative(x: list, y: list, n_interp: int = 100,x_label:str='x',y_la
     plt.show()
     return deriv_val,new_x
 
+import scipy.stats as sta
+
+
+def gaussian_smooth_points(points, kernel_r, nsig=3):
+    """ 将 points 进行高斯平滑 """
+
+    smoothed_points = points.copy()
+    kernlen = kernel_r * 2 + 1
+    x = np.linspace(-nsig, nsig, kernlen + 1)
+    kern1d = np.diff(sta.norm.cdf(x))
+    kern1d = kern1d / kern1d.sum()
+
+    len_points = len(points)
+    for j in range(len_points):
+        if kernel_r < j < len_points - kernel_r:
+            sum_data = np.array([0.0, 0.0, 0.0], dtype=np.double)
+            for i in range(1, 2 * kernel_r + 1, 1):
+                idx = j + i - kernel_r - 1
+                sum_data += points[idx] * kern1d[i]
+            smoothed_points[j] = sum_data / (2 * kernel_r + 1)
+    return smoothed_points
+
+
 if __name__ == '__main__':
     xlsxFile1 = './GE/BPM_Zsize_0125_01_save.xlsx'
     xlsxFile2 = './2021-12-11/BeamSize_Z_pA_1211_M03_300um_save.xlsx'
