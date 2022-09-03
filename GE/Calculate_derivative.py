@@ -57,7 +57,8 @@ def cal_deriv(x:list, y:list,x_label:str='x',y_label:str='y'):  # x, y的类型�
     ax.set_title("direct derivative")
     lin0 = ax.plot(x, y, marker='o', markersize=3, markerfacecolor='#20B2AA',
                               markeredgecolor='#20B2AA', linestyle='-', color='#20B2AA', label='original')
-    linD = axnew.plot(x, deriv,marker='o', markersize=3, linestyle='-', color='m', label='1st derivative')
+    deriv_conv=convolve_1D(deriv,np.array([0.2,0.2,0.2,0.2,0.2]))
+    linD = axnew.plot(x[1:-1], deriv_conv[1:-1],marker='o', markersize=3, linestyle='-', color='m', label='1st derivative')
     lins = lin0  + linD
     labels = [l.get_label() for l in lins]
     ax.legend(lins, labels, loc=0)
@@ -65,11 +66,11 @@ def cal_deriv(x:list, y:list,x_label:str='x',y_label:str='y'):  # x, y的类型�
     ax.set_ylabel(y_label, fontsize=16, color='#20B2AA')
     ax.set_xlabel(x_label, fontsize=16, color='#20B2AA')
     axnew.set_ylabel('1st derivative', fontsize=16, color='m')
-    plt.show()
+    #plt.show()
     return deriv,x
 
 
-def interp_derivative(x: list, y: list, n_interp: int = 100,x_label:str='x',y_label:str='y'):
+def interp_derivative(x: list, y: list, n_interp: int = 10,x_label:str='x',y_label:str='y'):
     """
     interpolate the x,y list first, then calculate the derivative value at each points
     :param n_interp: total number of the interpolate values
@@ -97,7 +98,8 @@ def interp_derivative(x: list, y: list, n_interp: int = 100,x_label:str='x',y_la
     ax.set_title("quadratic interpolate and derivative")
     lin0=ax.plot(x, y, 'or', markersize=3, label='original')
     lin1=ax.plot(new_x, new_y, '-xc', markersize=3, label='interpolate')
-    linD=axnew.plot(new_x, deriv_val, '-om', markersize=3, label='1st derivative')
+    deriv_val_conv=convolve_1D(deriv_val,np.array([0.2,0.2,0.2,0.2,0.2]))
+    linD=axnew.plot(new_x[1:-1], deriv_val_conv[1:-1], '-om', markersize=3, label='1st derivative')
     lins=lin0+lin1+linD
     labels=[l.get_label() for l in lins]
     ax.legend(lins, labels, loc=0)
@@ -105,7 +107,7 @@ def interp_derivative(x: list, y: list, n_interp: int = 100,x_label:str='x',y_la
     ax.set_ylabel(y_label, fontsize=16, color='#20B2AA')
     ax.set_xlabel(x_label, fontsize=16, color='#20B2AA')
     axnew.set_ylabel('1st derivative', fontsize=16, color='m')
-    plt.show()
+    #plt.show()
     return deriv_val,new_x
 
 import scipy.stats as sta
@@ -113,7 +115,7 @@ import scipy.stats as sta
 
 def gaussian_smooth_points(points, kernel_r, nsig=3):
     """ 将 points 进行高斯平滑 """
-
+    print(f'origin points: \n{len(points)}')
     smoothed_points = points.copy()
     kernlen = kernel_r * 2 + 1
     x = np.linspace(-nsig, nsig, kernlen + 1)
@@ -123,16 +125,20 @@ def gaussian_smooth_points(points, kernel_r, nsig=3):
     len_points = len(points)
     for j in range(len_points):
         if kernel_r < j < len_points - kernel_r:
-            sum_data = np.array([0.0, 0.0, 0.0], dtype=np.double)
+            sum_data = np.array([0.0, 0.0, 0.0])
             for i in range(1, 2 * kernel_r + 1, 1):
                 idx = j + i - kernel_r - 1
                 sum_data += points[idx] * kern1d[i]
-            smoothed_points[j] = sum_data / (2 * kernel_r + 1)
+            smoothed_points[j] = sum_data.sum() / (2 * kernel_r + 1)
     return smoothed_points
 
+def convolve_1D(data,core=np.array([0.35,0.3,0.35])):
+    return np.convolve(data,core,mode='same')
 
 if __name__ == '__main__':
-    xlsxFile1 = './GE/BPM_Zsize_0125_01_save.xlsx'
+    #xlsxFile1 = './GE/BPM_Zsize_0125_01_save.xlsx'
+    xlsxFile1 = './GE/04_Z_pA_BPM_Z_slit2-50_Size_SM6_pitch-1dot07.xlsx'
+    
     xlsxFile2 = './2021-12-11/BeamSize_Z_pA_1211_M03_300um_save.xlsx'
     xlsxFile3 = './2021-12-11/BeamSize_Z_pA_1211_M04_300um_0.xlsx'
     xlsxFile4 = './2021-12-11/BeamSize_X_pA_1211_M02_1200um.xlsx'
@@ -148,9 +154,14 @@ if __name__ == '__main__':
         dict_data[str(label)] = content.tolist()
     print(dict_data['scan set'],dict_data['current(pA)'])
     x,y=dict_data['scan set'],dict_data['current(pA)']
-    interp_derivative(x,y,len(x)+50,x_label='BPM-X(um)',y_label='Current(pA)')
-
+    #y_smooth=gaussian_smooth_points(y,1,3)
+    y_convolve=np.convolve(y,np.array([0.35,0.3,0.35]),mode='same')
+    #print(f'smooth data:\n{len(y_smooth)}')
+    plt.plot(x,y)
+    plt.plot(x[1:],y_convolve[1:])
+    interp_derivative(x[1:],y_convolve[1:],len(x)+50,x_label='BPM-X(um)',y_label='Current(pA)')
+    #interp_derivative(x,y,len(x)+50,x_label='BPM-X(um)',y_label='Current(pA)')
     # method 2
 
-    deriv_result = cal_deriv(x, y,x_label='BPM-X(um)',y_label='Current(pA)')
+    deriv_result = cal_deriv(x[1:],y_convolve[1:],x_label='BPM-X(um)',y_label='Current(pA)')
     plt.show()
