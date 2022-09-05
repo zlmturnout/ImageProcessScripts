@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
 from scipy.misc import derivative
+from scipy.signal import savgol_filter
 import pandas as pd
 sys.path.append('.')
 
@@ -154,8 +155,9 @@ if __name__ == '__main__':
         dict_data[str(label)] = content.tolist()
     print(dict_data['scan set'],dict_data['current(pA)'])
     x,y=dict_data['scan set'],dict_data['current(pA)']
-    #y_smooth=gaussian_smooth_points(y,1,3)
-    y_convolve=np.convolve(y,np.array([0.35,0.3,0.35]),mode='same')
+    #y_convolve=gaussian_smooth_points(y,1,3)
+    y_convolve=savgol_filter(y,30,3)
+    #y_convolve=np.convolve(y,np.array([0.35,0.3,0.35]),mode='same')
     #print(f'smooth data:\n{len(y_smooth)}')
     plt.plot(x,y)
     plt.plot(x[1:],y_convolve[1:])
