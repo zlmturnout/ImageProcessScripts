@@ -95,7 +95,11 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
+<<<<<<< HEAD
 p_col=1029
+=======
+p_col=1412
+>>>>>>> 188c5ddc3bcc4963e54daade10236d212cf2105b
 p_row=1042
 half_n=500   # total 2*half_n rows for correction
 
