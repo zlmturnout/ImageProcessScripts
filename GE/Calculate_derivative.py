@@ -7,6 +7,7 @@ from scipy.interpolate import interp1d
 from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
 from scipy.misc import derivative
 from scipy.signal import savgol_filter
+from scipy.optimize import curve_fit
 import pandas as pd
 sys.path.append('.')
 
@@ -135,6 +136,11 @@ def gaussian_smooth_points(points, kernel_r, nsig=3):
 
 def convolve_1D(data,core=np.array([0.35,0.3,0.35])):
     return np.convolve(data,core,mode='same')
+
+def gaussian_fit(x, amplitude, mean, stddev):
+    return amplitude * np.exp(-((x - mean) / 4 / stddev)**2)
+
+#popt, _ = curve_fit(gaussian_fit, x, data)
 
 if __name__ == '__main__':
     #xlsxFile1 = './GE/BPM_Zsize_0125_01_save.xlsx'
