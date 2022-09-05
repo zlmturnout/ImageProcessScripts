@@ -68,7 +68,7 @@ def cal_deriv(x:list, y:list,x_label:str='x',y_label:str='y'):  # x, y的类型�
     ax.set_ylabel(y_label, fontsize=16, color='#20B2AA')
     ax.set_xlabel(x_label, fontsize=16, color='#20B2AA')
     axnew.set_ylabel('1st derivative', fontsize=16, color='m')
-    #plt.show()
+    plt.show()
     return deriv,x
 
 
@@ -109,7 +109,7 @@ def interp_derivative(x: list, y: list, n_interp: int = 10,x_label:str='x',y_lab
     ax.set_ylabel(y_label, fontsize=16, color='#20B2AA')
     ax.set_xlabel(x_label, fontsize=16, color='#20B2AA')
     axnew.set_ylabel('1st derivative', fontsize=16, color='m')
-    #plt.show()
+    plt.show()
     return deriv_val,new_x
 
 import scipy.stats as sta
