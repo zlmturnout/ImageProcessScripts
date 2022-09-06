@@ -3,8 +3,6 @@ import time, datetime, os, sys
 import shutil
 from tkinter import E
 
-from sympy import re
-
 def create_path(file_path):
     if not os.path.exists(file_path):
         os.makedirs(file_path)
