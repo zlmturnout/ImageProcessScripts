@@ -8,6 +8,7 @@ from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
 from scipy.misc import derivative
 from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
+from scipy.stats import norm
 import pandas as pd
 sys.path.append('.')
 
@@ -139,8 +140,13 @@ def convolve_1D(data,core=np.array([0.35,0.3,0.35])):
 
 def gaussian_fit(x, amplitude, mean, stddev):
     return amplitude * np.exp(-((x - mean) / 4 / stddev)**2)
-
 #popt, _ = curve_fit(gaussian_fit, x, data)
+
+def fit_gaussian(x,*param):
+    return param[0]*np.exp(-np.power(x - param[2], 2.) / (2 * np.power(param[4], 2.)))+\
+           param[1]*np.exp(-np.power(x - param[3], 2.) / (2 * np.power(param[5], 2.)))
+ #popt,pcov = curve_fit(gaussian,x,y,p0=[3,4,3,6,1,1])
+
 
 if __name__ == '__main__':
     #xlsxFile1 = './GE/BPM_Zsize_0125_01_save.xlsx'
@@ -167,9 +173,23 @@ if __name__ == '__main__':
     #print(f'smooth data:\n{len(y_smooth)}')
     plt.plot(x,y)
     plt.plot(x[1:],y_convolve[1:])
-    interp_derivative(x[1:],y_convolve[1:],len(x)+50,x_label='BPM-X(um)',y_label='Current(pA)')
+    deriv_interp=interp_derivative(x[1:],y_convolve[1:],len(x)+50,x_label='BPM-X(um)',y_label='Current(pA)')
     #interp_derivative(x,y,len(x)+50,x_label='BPM-X(um)',y_label='Current(pA)')
     # method 2
 
     deriv_result = cal_deriv(x[1:],y_convolve[1:],x_label='BPM-X(um)',y_label='Current(pA)')
+    print(np.array(deriv_result[0])*-1)
+    # gauss fit x,-y_convolve]
+    fig3,ax=plt.subplots()
+    
+    deriv_y=np.array(deriv_result[0])*-1
+    plt.plot(np.array(deriv_result[1])[32:],deriv_y[32:])
+    popt,pcov=curve_fit(gaussian_fit,np.array(deriv_result[1])[32:],deriv_y[32:])
+    #popt,pcov=curve_fit(fit_gaussian,np.array(deriv_result[1])[32:],deriv_y[32:],p0=[3,4,3,6,1,1])
+    #data = np.random.normal(loc=5.0, scale=2.0, size=10000)
+    #mean,std=norm.fit(data)
+    #print(mean,std,len(deriv_y))
+
+    #print(f'{popt}\m{pcov}')
+
     plt.show()

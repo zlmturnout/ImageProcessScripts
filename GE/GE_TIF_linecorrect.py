@@ -95,7 +95,7 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1029
+p_col=1239
 p_row=1042
 half_n=500   # total 2*half_n rows for correction
 
@@ -165,7 +165,8 @@ corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_co
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     #k = 0.05 + j*0.1+j**2*(1e-07)
-    k = 0.00 + j*0.1+j**2*(1e-07)
+    #k = 0.00 + j*0.1+j**2*(1e-07)
+    k = 0.00 + j*0.01+0*j**2*(1e-07) #best fit for GE CCD
     low_lim = round(index*20 -1200)
     high_lim = round(index*20 + 1200)
     #low_lim = 3640
@@ -199,7 +200,8 @@ plt.legend([i for i in range(10)])
 # right move rows, dd = -round(k*ii)
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
-    k = 0.05 + j*0.1+j**2*(1e-07)
+    #k = 0.05 + j*0.1+j**2*(1e-07)
+    k = 0.00 + j*0.01+0*j**2*(1e-07)
     low_lim = round(index*20 -1200)
     high_lim = round(index*20 + 1200)
     #low_lim = 3640
