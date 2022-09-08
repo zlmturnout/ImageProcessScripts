@@ -165,7 +165,12 @@ corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_co
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     #k = 0.05 + j*0.1+j**2*(1e-07)
+<<<<<<< HEAD
     k = 0.00 + j*0.1+j**2*(1e-07)
+=======
+    #k = 0.00 + j*0.1+j**2*(1e-07)
+    k = 0.00 + j*0.01+0*j**2*(1e-07) #best fit for GE CCD
+>>>>>>> 10dbba37406bad324cc2e4e4902b59c96ce73b8e
     low_lim = round(index*20 -1200)
     high_lim = round(index*20 + 1200)
     #low_lim = 3640
@@ -194,12 +199,13 @@ for j in range(0,5,1):
         y_[round(low_lim/20):round(high_lim/20)])
     plt.title("correction via shift right+")
     plt.pause(0.5)
-plt.legend([i for i in range(10)])
+    plt.legend([i for i in range(10)])
 
 # right move rows, dd = -round(k*ii)
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
-    k = 0.05 + j*0.1+j**2*(1e-07)
+    #k = 0.05 + j*0.1+j**2*(1e-07)
+    k = 0.00 + j*0.01+0*j**2*(1e-07)
     low_lim = round(index*20 -1200)
     high_lim = round(index*20 + 1200)
     #low_lim = 3640

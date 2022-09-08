@@ -10,6 +10,7 @@ from PIL import Image
 import csv,cv2
 from scipy import interpolate
 import matplotlib.cm as cm
+
 def fastinterp1(x, y, xi):
     ixi = np.digitize(xi, x)
     n = len(x)
@@ -81,7 +82,7 @@ if __name__ == "__main__":
     print(len(y_interp))
     img_src=open_tif()
     visualize_tif(img_src)
-    # plt.plot(x,y,marker='o', markersize=4)
-    # plt.plot(xinterp,y_interp,marker='x', markersize=1)
-    # plt.legend(["initial","fast interpolate"])
-    # plt.show()
+    plt.plot(x,y,marker='o', markersize=2)
+    plt.plot(xinterp,y_interp,marker='x', markersize=2)
+    plt.legend(["initial","fast interpolate"])
+    plt.show()
