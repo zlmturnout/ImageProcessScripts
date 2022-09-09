@@ -10,6 +10,8 @@ from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 import pandas as pd
+from lmfit import Model
+from numpy import exp, loadtxt, pi, sqrt
 sys.path.append('.')
 
 def import_data(filename):
@@ -152,6 +154,9 @@ def gaussfit(x,a,x0,sigma):
 
 #popt,pcov = curve_fit(gaus,x,y,p0=[1,mean,sigma])
 
+def gaussian(x, amp, cen, wid):
+    """1-d gaussian: gaussian(x, amp, cen, wid)"""
+    return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
 if __name__ == '__main__':
     #xlsxFile1 = './GE/BPM_Zsize_0125_01_save.xlsx'
@@ -200,16 +205,12 @@ if __name__ == '__main__':
     #print(f'{popt}\m{pcov}')
     x0 = np.array(deriv_result[1])
     y0 = np.array(deriv_result[0])*-1
-    print(y0)
-    n=len(x0)
-    mean=sum(x0*y0)/n
-    sigma=sum(y0*(x0-mean)**2)/n
-    popt,pcov = curve_fit(gaussfit,x0,y0,p0=[1,mean,sigma])
-    plt.plot(x0,y0,'b+:',label='data')
-    plt.plot(x0,gaussfit(x0,*popt),'ro:',label='fit')
-    plt.legend() 
-    plt.title('Fig. 3 - Fit for Time Constant')
-    plt.xlabel('Time (s)')
-    plt.ylabel('Voltage (V)')
-    plt.show()
+    gmodel = Model(gaussian)
+    result = gmodel.fit(y0, x=x0, amp=1, cen=-35192, wid=1)
+
+    print(result.fit_report())
+    plt.plot(x0, y0, 'o')
+    plt.plot(x0, result.init_fit, '--', label='initial fit')
+    plt.plot(x0, result.best_fit, '-', label='best fit')
+    plt.legend()
     plt.show()

@@ -11,6 +11,8 @@ import csv,cv2
 from scipy import interpolate
 import matplotlib.cm as cm
 import pandas as pd
+from numpy import exp, loadtxt, pi, sqrt
+from lmfit import Model
 
 info = {}
 info['element'] = 'C'
@@ -48,6 +50,36 @@ def clear_bg(exp):
     #print(type(temp))
     return u, v, temp
 
+def gaussian(x, amp, cen, wid):
+    """1-d gaussian: gaussian(x, amp, cen, wid)"""
+    return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
+
+
+def Gaussian_FWHM(pd_data,center=1200):
+    """find FWHM from the imported pd_data [x,y]
+
+    Args:
+        pd_data (_type_): _description_
+    """
+    x = pd_data.values[:, 0]
+    y = pd_data.values[:, 2]
+    gmodel = Model(gaussian)
+    result = gmodel.fit(y, x=x, amp=1, cen=center, wid=2.6)
+    print(result.values)
+    print(result.fit_report())
+    wid_fit=result.params['wid'].value
+    wid_err=result.params['wid'].stderr
+    FWHM=wid_fit*2*np.sqrt(np.log(4))
+    FWHM_err=wid_err*2*np.sqrt(np.log(4))
+    print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
+    FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err:.4f}'
+    fig=plt.figure(figsize =(16, 9))
+    ax=plt.subplot()
+    plt.plot(x, y, 'o')
+    plt.plot(x, result.init_fit, '--', label='initial fit')
+    plt.plot(x, result.best_fit, '-', label='best fit')
+    plt.text(0.5, 0.5, s=FWHW_text,color = "m", transform=ax.transAxes,fontsize=15)
+    plt.legend()
 
 root = Tk()
 root.withdraw()
@@ -95,7 +127,7 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1239
+p_col=1191
 p_row=1042
 half_n=500   # total 2*half_n rows for correction
 
@@ -237,6 +269,8 @@ corrected_data=np.array(corrected_list,dtype=np.float32).T
 # save to excel
 pd_data=pd.DataFrame(corrected_data,columns=header_list)
 print(pd_data)
+# fit the pd_data
+Gaussian_FWHM(pd_data,center=p_col)
 excel_writer = pd.ExcelWriter(corr_datafile)
 pd_data.to_excel(excel_writer)
 excel_writer.save()
