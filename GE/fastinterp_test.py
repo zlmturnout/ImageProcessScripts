@@ -10,6 +10,7 @@ from PIL import Image
 import csv,cv2
 from scipy import interpolate
 import matplotlib.cm as cm
+from scipy.optimize import curve_fit
 
 def fastinterp1(x, y, xi):
     ixi = np.digitize(xi, x)
@@ -70,19 +71,47 @@ def visualize_tif(img_src:str):
         plt.legend(['raw','median blur'])
         plt.show()
 
+def gaussian_fit(x, amplitude, mean, stddev):
+    return amplitude * np.exp(-2*((x - mean) / stddev)**2)
+#popt, _ = curve_fit(gaussian_fit, x, data)
+
+def fit_gaussian(x,*param):
+    return param[0]*np.exp(-np.power(x - param[2], 2.) / (2 * np.power(param[4], 2.)))+\
+           param[1]*np.exp(-np.power(x - param[3], 2.) / (2 * np.power(param[5], 2.)))
+ #popt,pcov = curve_fit(gaussian,x,y,p0=[3,4,3,6,1,1])
+
+def gaussfit(x,a,x0,sigma):
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
+
+#popt,pcov = curve_fit(gaus,x,y,p0=[1,mean,sigma])
+
 
 if __name__ == "__main__":
-    num=9
-    x=np.arange(num)
-    # random number
-    y=np.random.randn(num)*10
-    xinterp = np.arange(0, num, 0.05)
-    print(len(y))
-    y_interp=fastinterp1(x,y,xinterp)
-    print(len(y_interp))
-    img_src=open_tif()
-    visualize_tif(img_src)
-    plt.plot(x,y,marker='o', markersize=2)
-    plt.plot(xinterp,y_interp,marker='x', markersize=2)
-    plt.legend(["initial","fast interpolate"])
+    # num=9
+    # x=np.arange(num)
+    # # random number
+    # y=np.random.randn(num)*10
+    # xinterp = np.arange(0, num, 0.05)
+    # print(len(y))
+    # y_interp=fastinterp1(x,y,xinterp)
+    # print(len(y_interp))
+    # img_src=open_tif()
+    # visualize_tif(img_src)
+    # plt.plot(x,y,marker='o', markersize=2)
+    # plt.plot(xinterp,y_interp,marker='x', markersize=2)
+    # plt.legend(["initial","fast interpolate"])
+    # plt.show()
+    x0 = np.asarray(range(10))
+    y0 = np.asarray([0,1,2,3,4,5,4,3,2,1])
+    print(y0)
+    n=len(x0)
+    mean=sum(x0*y0)/n
+    sigma=sum(y0*(x0-mean)**2)/n
+    popt,pcov = curve_fit(gaussian_fit,x0,y0,p0=[1,mean,sigma])
+    plt.plot(x0,y0,'b+:',label='data')
+    plt.plot(x0,gaussian_fit(x0,*popt),'ro:',label='fit')
+    plt.legend() 
+    plt.title('Fig. 3 - Fit for Time Constant')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Voltage (V)')
     plt.show()

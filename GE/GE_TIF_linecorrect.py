@@ -166,7 +166,7 @@ for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     #k = 0.05 + j*0.1+j**2*(1e-07)
     #k = 0.00 + j*0.1+j**2*(1e-07)
-    k = 0.00 + j*0.01+0*j**2*(1e-07) #best fit for GE CCD
+    k = 0.00 + j*0.01+j**2*(1e-07) #best fit for GE CCD
     low_lim = round(index*20 -1200)
     high_lim = round(index*20 + 1200)
     #low_lim = 3640

@@ -139,13 +139,18 @@ def convolve_1D(data,core=np.array([0.35,0.3,0.35])):
     return np.convolve(data,core,mode='same')
 
 def gaussian_fit(x, amplitude, mean, stddev):
-    return amplitude * np.exp(-((x - mean) / 4 / stddev)**2)
+    return amplitude * np.exp(-2*((x - mean) / stddev)**2)
 #popt, _ = curve_fit(gaussian_fit, x, data)
 
 def fit_gaussian(x,*param):
     return param[0]*np.exp(-np.power(x - param[2], 2.) / (2 * np.power(param[4], 2.)))+\
            param[1]*np.exp(-np.power(x - param[3], 2.) / (2 * np.power(param[5], 2.)))
  #popt,pcov = curve_fit(gaussian,x,y,p0=[3,4,3,6,1,1])
+
+def gaussfit(x,a,x0,sigma):
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
+
+#popt,pcov = curve_fit(gaus,x,y,p0=[1,mean,sigma])
 
 
 if __name__ == '__main__':
@@ -189,7 +194,22 @@ if __name__ == '__main__':
     #data = np.random.normal(loc=5.0, scale=2.0, size=10000)
     #mean,std=norm.fit(data)
     #print(mean,std,len(deriv_y))
-
+    #n=len(deriv_result[1])
+    #x=np.asarray(deriv_result[1])
+    #y=np.asarray(deriv_result[0])
     #print(f'{popt}\m{pcov}')
-
+    x0 = np.array(deriv_result[1])
+    y0 = np.array(deriv_result[0])*-1
+    print(y0)
+    n=len(x0)
+    mean=sum(x0*y0)/n
+    sigma=sum(y0*(x0-mean)**2)/n
+    popt,pcov = curve_fit(gaussfit,x0,y0,p0=[1,mean,sigma])
+    plt.plot(x0,y0,'b+:',label='data')
+    plt.plot(x0,gaussfit(x0,*popt),'ro:',label='fit')
+    plt.legend() 
+    plt.title('Fig. 3 - Fit for Time Constant')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Voltage (V)')
+    plt.show()
     plt.show()
