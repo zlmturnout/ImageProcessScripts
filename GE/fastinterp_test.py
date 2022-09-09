@@ -1,5 +1,4 @@
 # coding: utf-8
-from genericpath import isfile
 import numpy as np
 import matplotlib.pyplot as plt
 import tkinter,time,os
@@ -10,6 +9,9 @@ from PIL import Image
 import csv,cv2
 from scipy import interpolate
 import matplotlib.cm as cm
+from scipy.optimize import curve_fit
+import pandas as pd
+from numpy import exp, loadtxt, pi, sqrt
 
 def fastinterp1(x, y, xi):
     ixi = np.digitize(xi, x)
@@ -19,6 +21,29 @@ def fastinterp1(x, y, xi):
     yi = (1-t) * y[ixi-1] + t * y[ixi]
     yi = yi.T
     return yi
+
+def import_data(filename):
+    """
+    import data from files as pandas dataframe,
+    support filetype:<.xlsx>,<.csv>,<.json>.
+    :return: data in pandas dataframe form
+    """
+    pd_data = pd.DataFrame()
+    # filename, filetype = QFileDialog.getOpenFileName(self, "read data file(supported filetype:xlsx/csv/json)",
+    #                                                  './', '*.xlsx;;*.csv;;*.json')
+    # print(filename, filetype)
+    assert os.path.isfile(os.path.abspath(filename))
+    if filename.endswith('.xlsx'):
+        # add dtype={'time stamp': 'datetime64[ns]'} if have 'time stamp'
+        pd_data = pd.read_excel(filename, index_col=0, na_values=["NA"], engine='openpyxl')
+        # print(pd_data)
+    if filename.endswith('.csv'):
+        pd_data = pd.read_csv(filename, index_col=0)
+    if filename.endswith('.json'):
+        pd_data = pd.read_json(filename)
+    # drop the row with NaN and return
+    return pd_data.dropna()
+
 
 def open_tif():
     """open a tif image save by GE CCD
@@ -70,19 +95,52 @@ def visualize_tif(img_src:str):
         plt.legend(['raw','median blur'])
         plt.show()
 
+def gaussian_fit(x, amplitude, mean, stddev):
+    return amplitude * np.exp(-2*((x - mean) / stddev)**2)
+#popt, _ = curve_fit(gaussian_fit, x, data)
+
+def fit_gaussian(x,*param):
+    return param[0]*np.exp(-np.power(x - param[2], 2.) / (2 * np.power(param[4], 2.)))+\
+           param[1]*np.exp(-np.power(x - param[3], 2.) / (2 * np.power(param[5], 2.)))
+ #popt,pcov = curve_fit(gaussian,x,y,p0=[3,4,3,6,1,1])
+
+def gaussfit(x,a,x0,sigma):
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
+
+#popt,pcov = curve_fit(gaus,x,y,p0=[1,mean,sigma])
+
 
 if __name__ == "__main__":
+    datafile="./GE/corrected-BEST_12-C@445eV0907.xlsx"
+    print(os.path.abspath(datafile))
+    pd_data=import_data(datafile)
     num=9
-    x=np.arange(num)
-    # random number
-    y=np.random.randn(num)*10
-    xinterp = np.arange(0, num, 0.05)
-    print(len(y))
-    y_interp=fastinterp1(x,y,xinterp)
-    print(len(y_interp))
-    img_src=open_tif()
-    visualize_tif(img_src)
-    plt.plot(x,y,marker='o', markersize=2)
-    plt.plot(xinterp,y_interp,marker='x', markersize=2)
-    plt.legend(["initial","fast interpolate"])
+    # x=np.arange(num)
+    # # random number
+    # y=np.random.randn(num)*10
+    # xinterp = np.arange(0, num, 0.05)
+    # print(len(y))
+    # y_interp=fastinterp1(x,y,xinterp)
+    # print(len(y_interp))
+    # img_src=open_tif()
+    # visualize_tif(img_src)
+    # plt.plot(x,y,marker='o', markersize=2)
+    # plt.plot(xinterp,y_interp,marker='x', markersize=2)
+    # plt.legend(["initial","fast interpolate"])
+    # plt.show()
+    # x0 = np.asarray(range(10))
+    # y0 = np.asarray([0,1,2,3,4,5,4,3,2,1])
+    x0=pd_data.values[:,0]
+    y0=pd_data.values[:,1]
+    print(y0)
+    n=len(x0)
+    mean=sum(x0)/n
+    sigma=sum(y0*(x0-mean)**2)/n
+    popt,pcov = curve_fit(gaussian_fit,x0,y0,p0=[1,mean,sigma],method='lm')
+    plt.plot(x0,y0,'b+:',label='data')
+    plt.plot(x0,gaussian_fit(x0,*popt),'ro:',label='fit')
+    plt.legend() 
+    plt.title('Fig. 3 - Fit for Time Constant')
+    plt.xlabel('Time (s)')
+    plt.ylabel('Voltage (V)')
     plt.show()

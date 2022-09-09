@@ -10,6 +10,8 @@ from scipy.signal import savgol_filter
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 import pandas as pd
+from lmfit import Model
+from numpy import exp, loadtxt, pi, sqrt
 sys.path.append('.')
 
 def import_data(filename):
@@ -139,7 +141,7 @@ def convolve_1D(data,core=np.array([0.35,0.3,0.35])):
     return np.convolve(data,core,mode='same')
 
 def gaussian_fit(x, amplitude, mean, stddev):
-    return amplitude * np.exp(-((x - mean) / 4 / stddev)**2)
+    return amplitude * np.exp(-2*((x - mean) / stddev)**2)
 #popt, _ = curve_fit(gaussian_fit, x, data)
 
 def fit_gaussian(x,*param):
@@ -147,6 +149,14 @@ def fit_gaussian(x,*param):
            param[1]*np.exp(-np.power(x - param[3], 2.) / (2 * np.power(param[5], 2.)))
  #popt,pcov = curve_fit(gaussian,x,y,p0=[3,4,3,6,1,1])
 
+def gaussfit(x,a,x0,sigma):
+    return a*np.exp(-(x-x0)**2/(2*sigma**2))
+
+#popt,pcov = curve_fit(gaus,x,y,p0=[1,mean,sigma])
+
+def gaussian(x, amp, cen, wid):
+    """1-d gaussian: gaussian(x, amp, cen, wid)"""
+    return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
 if __name__ == '__main__':
     #xlsxFile1 = './GE/BPM_Zsize_0125_01_save.xlsx'
@@ -189,7 +199,18 @@ if __name__ == '__main__':
     #data = np.random.normal(loc=5.0, scale=2.0, size=10000)
     #mean,std=norm.fit(data)
     #print(mean,std,len(deriv_y))
-
+    #n=len(deriv_result[1])
+    #x=np.asarray(deriv_result[1])
+    #y=np.asarray(deriv_result[0])
     #print(f'{popt}\m{pcov}')
+    x0 = np.array(deriv_result[1])
+    y0 = np.array(deriv_result[0])*-1
+    gmodel = Model(gaussian)
+    result = gmodel.fit(y0, x=x0, amp=1, cen=-35192, wid=1)
 
+    print(result.fit_report())
+    plt.plot(x0, y0, 'o')
+    plt.plot(x0, result.init_fit, '--', label='initial fit')
+    plt.plot(x0, result.best_fit, '-', label='best fit')
+    plt.legend()
     plt.show()
