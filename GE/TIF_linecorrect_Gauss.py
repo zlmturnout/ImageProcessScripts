@@ -194,12 +194,16 @@ low_lim = round(index*20 -1200)
 high_lim = round(index*20 + 1200)
 xinitial = np.arange(n)
 corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_col)
+
+def shift_pixel(index:int,j:int=1):
+    return round(0.005 + index*0.005+index**2*(1+j*0.1)*1e-7)
+
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     #k = 0.05 + j*0.1+j**2*(1e-07)
     #k = 0.01 + j*0.01+j**2*(1e-07)
     #k = 0.01 + j*0.01+j**2*(1e-07)
-    k = 0.00 + j*0.01+j**2*(1e-07)
+    k = 0.01 + j*0.01+j**2*(1e-07)
     low_lim = round(index*20 -1200)
     high_lim = round(index*20 + 1200)
     #low_lim = 3640
@@ -212,7 +216,8 @@ for j in range(0,5,1):
     for ii in range(m):
         temp =cor_matrix[ii, :]
         ntemp = fastinterp1(xinitial, temp, xinterp)
-        dd = round(k*ii)
+        #dd = round(k*ii)
+        dd= shift_pixel(ii,j)
         new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
         #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
         #new_img = f(xx)
@@ -247,7 +252,8 @@ for j in range(0,5,1):
     for ii in range(m):
         temp =cor_matrix[ii, :]
         ntemp = fastinterp1(xinitial, temp, xinterp)
-        dd = -round(k*ii)
+        #dd = -round(k*ii)
+        dd= shift_pixel(ii,j*-1)
         new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
         #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
         #new_img = f(xx)
@@ -264,7 +270,7 @@ for j in range(0,5,1):
 plt.legend([i for i in range(10)])
 
 # save corrected_list data
-corr_datafile=os.path.join(save_folder,f'corrected-{filename}.xlsx')
+corr_datafile=os.path.join(save_folder,f'New03corrected-{filename}.xlsx')
 
 corrected_data=np.array(corrected_list,dtype=np.float32).T
 # save to excel
