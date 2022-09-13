@@ -1,0 +1,40 @@
+import os, sys,time,datetime,random,math
+import numpy as np
+from PIL import Image
+import csv,cv2
+import pandas as pd
+sys.path.append('.')
+
+def generate_Linetif(width:int,tif_shape:tuple=(2048,2052)):
+    """generate a np array containing line with width of several pixels 
+    line_expression:y=57*x-57000
+    Args:
+        width (int): witdth of the line in pixels
+    """
+    img_matrix=np.zeros(shape=tif_shape)
+    for row in range(tif_shape[1]): # row is height=2052
+        for col in range(tif_shape[0]): # row is width=2048
+            # distance of point(j,row) to the line
+            dist=abs((col-(57000+row)/57)*math.sin(np.arctan(57)))
+            if round(dist)<width:
+                img_matrix[col,row]=float(1300+30*random.randint(1,9))
+            else:
+                img_matrix[col,row]=float(1300+100*random.random())
+    #print(img_matrix)
+    return img_matrix.T
+
+
+if __name__ == '__main__':
+    tif_file = r"F:\\Eline20U2\\ElineData\\DATA2022\\20220905\\01-backup.tif"
+    img = Image.open(tif_file)
+    matrix = np.array(img,dtype=np.float32)
+    print(img.info)
+    width=8
+    new_tif=os.path.join(os.path.join('./GE/tif_files'),f'new_testline{width}.tif')
+    #pil_image=Image.fromarray(matrix)
+    #pil_image.show()
+    #tiffinfo={'compression': 'raw', 'dpi': (1, 1), 'resolution': (1, 1)}
+    #pil_image.save(new_tif)
+    img_matrix=generate_Linetif(width=width)
+    pil_image=Image.fromarray(img_matrix)
+    pil_image.save(new_tif)

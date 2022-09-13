@@ -197,12 +197,8 @@ corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_co
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     #k = 0.05 + j*0.1+j**2*(1e-07)
-<<<<<<< HEAD
-    k = 0.00 + j*0.1+j**2*(1e-07)
-=======
     #k = 0.00 + j*0.1+j**2*(1e-07)
     k = 0.00 + j*0.01+j**2*(1e-07) #best fit for GE CCD
->>>>>>> 520d72159a2b5a350e9f3a12f6e52f385ec2bdfb
     low_lim = round(index*20 -1200)
     high_lim = round(index*20 + 1200)
     #low_lim = 3640
