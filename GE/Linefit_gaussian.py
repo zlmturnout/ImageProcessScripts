@@ -163,11 +163,12 @@ plt.subplot(3,3,8),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 
 thresholdUP = 0.9
 thresholdDOWN = 0.1
-matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
-print(type(matrix1),matrix1.shape)
-m, n, out = clear_bg(matrix1)
+#matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
+#print(type(matrix1),matrix1.shape)
+#m, n, out = clear_bg(matrix1)
+m, n, out = clear_bg(mean_matrix.T)
 print(f'row: {m}\ncolumn: {n}')
-plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=-25,vmax=25),plt.title("clear background")
+plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow),plt.title("clear background")
 plt.colorbar(location='bottom', fraction=0.1)
 plt.subplot(3,3,6),plt.hist(out.flatten(),bins=200),plt.title("intensity histogram")
 sum_cols_cut=np.sum(out.T,axis=1)
@@ -177,8 +178,8 @@ plt.subplot(3,3,9),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 
 # line correction
 #matrix2 = out
-cor_matrix = mean_matrix.T
-#cor_matrix = out
+#cor_matrix = mean_matrix.T
+cor_matrix = out
 new_img = np.zeros((m,n))
 '''
 plt.subplot(1,1,1)

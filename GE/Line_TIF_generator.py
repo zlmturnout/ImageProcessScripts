@@ -10,6 +10,7 @@ def gaussian(x, amp, cen, wid):
     """1-d gaussian: gaussian(x, amp, cen, wid)"""
     return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
+
 def generate_Linetif(width:int,tif_shape:tuple=(2048,2052)):
     """generate a np array containing line with width of several pixels 
     line_expression:y=57*x-57000
@@ -22,7 +23,7 @@ def generate_Linetif(width:int,tif_shape:tuple=(2048,2052)):
         for col in range(tif_shape[0]): # row is width=2048
             # distance of point(j,row) to the line
             dist=abs((col-(57000+row)/57)*math.sin(np.arctan(57)))
-            img_matrix[col,row]=float(1300+1000*gaussian(dist,1,0,w))
+            img_matrix[col,row]=float(1300+1000*gaussian(dist,1,0,w)+0.005*col+15)
             # if round(dist)<width:
             #     img_matrix[col,row]=float(1300+1000*gaussian(dist,1,0,w))
             # else:
@@ -36,12 +37,14 @@ if __name__ == '__main__':
     img = Image.open(tif_file)
     matrix = np.array(img,dtype=np.float32)
     print(img.info)
-    width=30
+    width=5
     new_tif=os.path.join(os.path.join('./GE/tif_files'),f'new_testline{width}.tif')
     #pil_image=Image.fromarray(matrix)
     #pil_image.show()
     #tiffinfo={'compression': 'raw', 'dpi': (1, 1), 'resolution': (1, 1)}
     #pil_image.save(new_tif)
+    time_start=time.time()
     img_matrix=generate_Linetif(width=width)
     pil_image=Image.fromarray(img_matrix)
     pil_image.save(new_tif)
+    print(f'line tif generate cost: {time.time()-time_start:.4f}s')
