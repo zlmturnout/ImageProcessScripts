@@ -45,7 +45,8 @@ def clear_bg(exp):
     for i in np.arange(u):
         k = (np.sum(exp[i, 1:10]) - np.sum(exp[i, -10:-1]))/(v)/10
         b = np.sum(exp[i, 1:10])/10 - k*10
-        exp_bg = -k * np.arange(v) + b
+        #b = - k*10
+        exp_bg = -k * np.arange(v) +b+exp[i, 0]/10
         temp[i, :] = exp[i, :] - exp_bg
     #print(type(temp))
     return u, v, temp
