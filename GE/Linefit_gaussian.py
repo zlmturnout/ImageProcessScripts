@@ -45,7 +45,8 @@ def clear_bg(exp):
     for i in np.arange(u):
         k = (np.sum(exp[i, 1:10]) - np.sum(exp[i, -10:-1]))/(v)/10
         b = np.sum(exp[i, 1:10])/10 - k*10
-        exp_bg = -k * np.arange(v) + b
+        #b = - k*10
+        exp_bg = -k * np.arange(v) +b+exp[i, 0]/10
         temp[i, :] = exp[i, :] - exp_bg
     #print(type(temp))
     return u, v, temp
@@ -55,7 +56,7 @@ def gaussian(x, amp, cen, wid):
     return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
 
-def Gaussian_FWHM(pd_data,center=1277):
+def Gaussian_FWHM(pd_data,center=1200):
     """find FWHM from the imported pd_data [x,y]
 
     Args:
@@ -127,7 +128,7 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1255
+p_col=1013
 p_row=1042
 half_n=500   # total 2*half_n rows for correction
 
@@ -163,11 +164,12 @@ plt.subplot(3,3,8),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 
 thresholdUP = 0.9
 thresholdDOWN = 0.1
-matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
-print(type(matrix1),matrix1.shape)
-m, n, out = clear_bg(matrix1)
+#matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
+#print(type(matrix1),matrix1.shape)
+#m, n, out = clear_bg(matrix1)
+m, n, out = clear_bg(mean_matrix.T)
 print(f'row: {m}\ncolumn: {n}')
-plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=-25,vmax=25),plt.title("clear background")
+plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow),plt.title("clear background")
 plt.colorbar(location='bottom', fraction=0.1)
 plt.subplot(3,3,6),plt.hist(out.flatten(),bins=200),plt.title("intensity histogram")
 sum_cols_cut=np.sum(out.T,axis=1)
@@ -194,6 +196,11 @@ low_lim = round(index*20 -1200)
 high_lim = round(index*20 + 1200)
 xinitial = np.arange(n)
 corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_col)
+
+def shift_pixels(index:int,j:int):
+    return -(20/57.0+0.002*j+j**2*(1e-7))*index
+    #return -0.35*index+0.5
+
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     #k = 0.05 + j*0.1+j**2*(1e-07)
@@ -211,12 +218,13 @@ for j in range(0,5,1):
     for ii in range(m):
         temp =cor_matrix[ii, :]
         ntemp = fastinterp1(xinitial, temp, xinterp)
-        dd = round(k*ii)
+        #dd = round(k*ii)
+        dd=round(shift_pixels(ii,j))
         new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
         #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
         #new_img = f(xx)
         result = result + ntemp[low_lim-dd:high_lim-dd]
-    #print(result)
+    print(result)
     
     y_ = fastinterp1(new_X, result, xx)
     # append data
@@ -233,7 +241,7 @@ for j in range(0,5,1):
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
     #k = 0.05 + j*0.1+j**2*(1e-07)
-    k = 0.00 + j*0.01+0*j**2*(1e-07)
+    k = 0.00 + j*0.005+0*j**2*(1e-07)
     low_lim = round(index*20 -1200)
     high_lim = round(index*20 + 1200)
     #low_lim = 3640
@@ -246,7 +254,8 @@ for j in range(0,5,1):
     for ii in range(m):
         temp =cor_matrix[ii, :]
         ntemp = fastinterp1(xinitial, temp, xinterp)
-        dd = -round(k*ii)
+        #dd = -round(k*ii)
+        dd=round(shift_pixels(ii,-j))
         new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
         #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
         #new_img = f(xx)
