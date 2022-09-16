@@ -196,7 +196,8 @@ xinitial = np.arange(n)
 corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_col)
 
 def shift_pixel(index:int,j:int=1):
-    return round(0.005 + index*0.005+index**2*(1+j*0.1)*1e-7)
+    #return round(0.005 + index*0.005+index**2*(1+j*0.1)*1e-7)
+    return (0.001+0.005*j)*index+index**2*(1e-7)
 
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)

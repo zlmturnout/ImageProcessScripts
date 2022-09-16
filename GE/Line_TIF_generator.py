@@ -36,12 +36,12 @@ def generate_Linetif(width:int,tif_shape:tuple=(2048,2052),add_noise=True):
 
 
 if __name__ == '__main__':
-    tif_file = r"F:\\Eline20U2\\ElineData\\DATA2022\\20220905\\01-backup.tif"
-    img = Image.open(tif_file)
-    matrix = np.array(img,dtype=np.float32)
-    print(img.info)
-    width=12
-    add_noise=False
+    # tif_file = r"F:\\Eline20U2\\ElineData\\DATA2022\\20220905\\01-backup.tif"
+    # img = Image.open(tif_file)
+    # matrix = np.array(img,dtype=np.float32)
+    # print(img.info)
+    width=5
+    add_noise=True
     if add_noise:
         noise_str='noise'
     else:

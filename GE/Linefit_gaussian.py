@@ -62,6 +62,7 @@ def Gaussian_FWHM(pd_data,center=1200):
     Args:
         pd_data (_type_): _description_
     """
+    
     x = pd_data.values[:, 0]
     y = pd_data.values[:, 1]
     gmodel = Model(gaussian)
@@ -69,11 +70,16 @@ def Gaussian_FWHM(pd_data,center=1200):
     print(result.values)
     print(result.fit_report())
     wid_fit=result.params['wid'].value
-    wid_err=result.params['wid'].stderr
+    wid_err=result.params['wid'].stderr 
+    print(f'wid_err:{wid_err}')
     FWHM=wid_fit*2*np.sqrt(np.log(4))
-    FWHM_err=wid_err*2*np.sqrt(np.log(4))
+    if wid_err!= None:
+        FWHM_err=wid_err*2*np.sqrt(np.log(4))
+        FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err:.4f}'
+    else:
+        FWHM_err='estimate failed'
+        FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
-    FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err:.4f}'
     fig=plt.figure(figsize =(16, 9))
     ax=plt.subplot()
     plt.plot(x, y, 'o')
@@ -128,7 +134,7 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1013
+p_col=1000
 p_row=1042
 half_n=500   # total 2*half_n rows for correction
 
@@ -168,7 +174,7 @@ thresholdDOWN = 0.1
 #print(type(matrix1),matrix1.shape)
 #m, n, out = clear_bg(matrix1)
 m, n, out = clear_bg(mean_matrix.T)
-print(f'row: {m}\ncolumn: {n}')
+print(f'row: {m}\n column: {n}')
 plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow),plt.title("clear background")
 plt.colorbar(location='bottom', fraction=0.1)
 plt.subplot(3,3,6),plt.hist(out.flatten(),bins=200),plt.title("intensity histogram")
@@ -199,6 +205,7 @@ corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_co
 
 def shift_pixels(index:int,j:int):
     return -(20/57.0+0.002*j+j**2*(1e-7))*index
+    #return (0.001+0.005*j)*index+index**2*(1e-7)
     #return -0.35*index+0.5
 
 for j in range(0,5,1):
@@ -220,6 +227,7 @@ for j in range(0,5,1):
         ntemp = fastinterp1(xinitial, temp, xinterp)
         #dd = round(k*ii)
         dd=round(shift_pixels(ii,j))
+        print(f'shift pixels: {dd} with j={j} and index={ii}')
         new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
         #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
         #new_img = f(xx)
