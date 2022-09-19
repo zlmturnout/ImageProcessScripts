@@ -45,9 +45,9 @@ def clear_bg(exp):
     for i in np.arange(u):
         k = (np.sum(exp[i, 1:10]) - np.sum(exp[i, -10:-1]))/(v)/10
         b = np.sum(exp[i, 1:10])/10 - k*10
-        exp_bg = -k * np.arange(v) + b
+        #b = - k*10
+        exp_bg = -k * np.arange(v) +b+exp[i, 0]/10
         temp[i, :] = exp[i, :] - exp_bg
-    #print(type(temp))
     return u, v, temp
 
 def gaussian(x, amp, cen, wid):
@@ -70,9 +70,12 @@ def Gaussian_FWHM(pd_data,center=1277):
     wid_fit=result.params['wid'].value
     wid_err=result.params['wid'].stderr
     FWHM=wid_fit*2*np.sqrt(np.log(4))
-    FWHM_err=wid_err*2*np.sqrt(np.log(4))
+    if wid_err:
+        FWHM_err=wid_err*2*np.sqrt(np.log(4))
+    else:
+        FWHM_err='Gaussian Fit failed'
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
-    FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err:.4f}'
+    FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     fig=plt.figure(figsize =(16, 9))
     ax=plt.subplot()
     plt.plot(x, y, 'o')
@@ -127,7 +130,7 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1255
+p_col=1131
 p_row=1042
 half_n=500   # total 2*half_n rows for correction
 
@@ -165,9 +168,10 @@ thresholdUP = 0.9
 thresholdDOWN = 0.1
 matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
 print(type(matrix1),matrix1.shape)
-m, n, out = clear_bg(matrix1)
+m, n, out = clear_bg(mean_matrix.T)
+#m, n, out = clear_bg(matrix1)
 print(f'row: {m}\ncolumn: {n}')
-plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=-25,vmax=25),plt.title("clear background")
+plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=0,vmax=10),plt.title("clear background")
 plt.colorbar(location='bottom', fraction=0.1)
 plt.subplot(3,3,6),plt.hist(out.flatten(),bins=200),plt.title("intensity histogram")
 sum_cols_cut=np.sum(out.T,axis=1)
@@ -197,7 +201,7 @@ corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_co
 
 def shift_pixel(index:int,j:int=1):
     #return round(0.005 + index*0.005+index**2*(1+j*0.1)*1e-7)
-    return (0.001+0.005*j)*index+index**2*(1e-7)
+    return round((0.001+0.005*j)*index+index**2*(1e-7))
 
 for j in range(0,5,1):
     #k = 0.4 + j*0.1+j**2*(1e-07)
@@ -271,7 +275,7 @@ for j in range(0,5,1):
 plt.legend([i for i in range(10)])
 
 # save corrected_list data
-corr_datafile=os.path.join(save_folder,f'New03corrected-{filename}.xlsx')
+corr_datafile=os.path.join(save_folder,f'NewNOdetectcorrected-{filename}.xlsx')
 
 corrected_data=np.array(corrected_list,dtype=np.float32).T
 # save to excel

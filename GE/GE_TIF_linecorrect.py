@@ -127,7 +127,7 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1255
+p_col=1131
 p_row=1042
 half_n=500   # total 2*half_n rows for correction
 
@@ -165,7 +165,8 @@ thresholdUP = 0.9
 thresholdDOWN = 0.1
 matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
 print(type(matrix1),matrix1.shape)
-m, n, out = clear_bg(matrix1)
+#m, n, out = clear_bg(matrix1)
+m, n, out = clear_bg(mean_matrix.T)
 print(f'row: {m}\ncolumn: {n}')
 plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=-25,vmax=25),plt.title("clear background")
 plt.colorbar(location='bottom', fraction=0.1)
