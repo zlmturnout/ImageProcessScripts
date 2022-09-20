@@ -40,7 +40,7 @@ if __name__ == '__main__':
     # img = Image.open(tif_file)
     # matrix = np.array(img,dtype=np.float32)
     # print(img.info)
-    width=5
+    width=30
     add_noise=True
     if add_noise:
         noise_str='noise'

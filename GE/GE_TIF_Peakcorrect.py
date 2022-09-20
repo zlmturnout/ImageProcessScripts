@@ -66,7 +66,7 @@ def Gaussian_FWHM(x,y,center=1200):
     # x = pd_data.values[:, 0]
     # y = pd_data.values[:, 1]
     gmodel = Model(gaussian)
-    result = gmodel.fit(y, x=x, amp=150706, cen=center, wid=2.6)
+    result = gmodel.fit(y, x=x, amp=49146, cen=center, wid=2.6)
     print(result.values)
     print(result.fit_report())
     wid_fit=result.params['wid'].value
@@ -81,6 +81,7 @@ def Gaussian_FWHM(x,y,center=1200):
         FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
     fig=plt.figure(figsize =(16, 9))
+    fig.canvas.manager.window.setWindowTitle("Fit-FWHM")
     ax=plt.subplot()
     plt.plot(x, y, 'o')
     plt.plot(x, result.init_fit, '--', label='initial fit')
@@ -175,7 +176,10 @@ plt.subplot(3,3,9),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 def shift_pixel(index:int,j:int=1):
     #return round(0.005 + index*0.01+index**2*(1+j*0.1)*1e-7)
     #return round((0.001+0.005*j)*index+index**2*(1e-7))
-    return round((0.015+0.0005*j)*index+index**2*(1e-7)) # best fit results
+    #return round((0.015+0.0005*j)*index+index**2*(1e-7)) # best fit results0918-11
+    return round((0.006+0.0005*j)*index+index**2*(1e-7)) # best fit results 0905-12
+    #return round(-(20/57.0+0.002*j+j**2*(1e-7))*index)  # for test line y=57*x-57000
+    
 
 header_list=['pixels']
 
@@ -206,7 +210,7 @@ for j in range(0,5,1):
         ntemp = fastinterp1(xinitial, temp, xinterp)
         dd= shift_pixel(ii,j)
         #print(f'shift pixels: {dd} with j={j} and index={ii}')
-        new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
+        #new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
         result = result + ntemp[low_lim-dd:high_lim-dd]
     #print(result)
     
@@ -235,7 +239,7 @@ for j in range(0,5,1):
         ntemp = fastinterp1(xinitial, temp, xinterp)
         dd= shift_pixel(ii,-j)
         #print(f'shift pixels: {dd} with j={j} and index={ii}')
-        new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
+        #new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
         result = result + ntemp[low_lim-dd:high_lim-dd]
     print(result)
     y_ = fastinterp1(new_X, result, xx)
@@ -249,7 +253,8 @@ for j in range(0,5,1):
 plt.legend([i for i in range(10)])
 
 # save corrected_list data
-corr_datafile=os.path.join(save_folder,f'Peakcorrected_half_n1126_square-{half_n}-{filename}.xlsx')
+#corr_datafile=os.path.join(save_folder,f'Peakcorrected_half_n1196-2_square200-{half_n}-{filename}.xlsx')
+corr_datafile=os.path.join(save_folder,f'Peakcorrected_testline-{half_n}-{filename}.xlsx')
 
 corrected_data=np.array(corrected_list,dtype=np.float32).T
 # save to excel

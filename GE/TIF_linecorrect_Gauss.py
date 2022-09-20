@@ -77,6 +77,7 @@ def Gaussian_FWHM(pd_data,center=1277):
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
     FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     fig=plt.figure(figsize =(16, 9))
+    fig.canvas.manager.window.setWindowTitle("Fit-FWHM")
     ax=plt.subplot()
     plt.plot(x, y, 'o')
     plt.plot(x, result.init_fit, '--', label='initial fit')
