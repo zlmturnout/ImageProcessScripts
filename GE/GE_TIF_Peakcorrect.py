@@ -56,7 +56,7 @@ def gaussian(x, amp, cen, wid):
     return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
 
-def Gaussian_FWHM(x,y,center=1200):
+def Gaussian_FWHM(x,y,center=1200,index=1):
     """find FWHM from the imported pd_data [x,y]
 
     Args:
@@ -81,12 +81,13 @@ def Gaussian_FWHM(x,y,center=1200):
         FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
     fig=plt.figure(figsize =(16, 9))
-    fig.canvas.manager.window.setWindowTitle("Fit-FWHM")
+    fig.canvas.manager.window.setWindowTitle(f"Fit-FWHM-{index}")
     ax=plt.subplot()
     plt.plot(x, y, 'o')
     plt.plot(x, result.init_fit, '--', label='initial fit')
     plt.plot(x, result.best_fit, '-', label='best fit')
     plt.text(0.5, 0.5, s=FWHW_text,color = "m", transform=ax.transAxes,fontsize=15)
+    plt.text(0.5, 1.0, s=f'Gauss FIt-{index}',color = "m", transform=ax.transAxes,fontsize=15)
     plt.legend()
     return FWHM,FWHM_err
 
@@ -120,7 +121,7 @@ plt.subplot(2,2,2),plt.plot(col_index,sum_cols_raw),plt.title("sum rows")
 
 
 # selected point near the mid of the line
-p_col=1126
+p_col=935
 p_row=1042
 half_n=200   # total 2*half_n rows for correction
 '''
@@ -176,8 +177,8 @@ plt.subplot(3,3,9),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 def shift_pixel(index:int,j:int=1):
     #return round(0.005 + index*0.01+index**2*(1+j*0.1)*1e-7)
     #return round((0.001+0.005*j)*index+index**2*(1e-7))
-    #return round((0.015+0.0005*j)*index+index**2*(1e-7)) # best fit results0918-11
-    return round((0.006+0.0005*j)*index+index**2*(1e-7)) # best fit results 0905-12
+    return round((0.005+0.0005*j)*index+index**2*(1e-7)) # best fit results0918-11
+    #return round((0.006+0.0005*j)*index+index**2*(1e-7)) # best fit results 0905-12
     #return round(-(20/57.0+0.002*j+j**2*(1e-7))*index)  # for test line y=57*x-57000
     
 
@@ -254,7 +255,7 @@ plt.legend([i for i in range(10)])
 
 # save corrected_list data
 #corr_datafile=os.path.join(save_folder,f'Peakcorrected_half_n1196-2_square200-{half_n}-{filename}.xlsx')
-corr_datafile=os.path.join(save_folder,f'Peakcorrected_testline-{half_n}-{filename}.xlsx')
+corr_datafile=os.path.join(save_folder,f'Peakcorrected-half{half_n}_peak{p_col}-{filename}.xlsx')
 
 corrected_data=np.array(corrected_list,dtype=np.float32).T
 # save to excel
@@ -266,9 +267,9 @@ x_correct=pd_data.values[:, 0]
 FWHM_results={}
 for i in range(10):
     y_correct=pd_data.values[:, i+1]
-    FWHM,FWHM_err=Gaussian_FWHM(x_correct,y_correct,center=p_col)
+    FWHM,FWHM_err=Gaussian_FWHM(x_correct,y_correct,center=p_col,index=(1-2*int(i/5))*(i%5))
     print(f'fit-{i}:{FWHM:.4f},{FWHM_err}\n')
-    FWHM_results[f'Fit-{i}']=(FWHM,FWHM_err)
+    FWHM_results[f'FitGauss{i}']=(FWHM,FWHM_err)
 for key,value in FWHM_results.items():
     print(f'{key}: {value}\n')
 excel_writer = pd.ExcelWriter(corr_datafile)
