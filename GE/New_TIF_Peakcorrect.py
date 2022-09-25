@@ -29,13 +29,15 @@ def fastinterp1(x, y, xi):
 
 
 def detectorclean(exp, noise1, noise2):
-
     exp = exp - np.mean(exp[:, noise1:noise2])
     exp[exp > (np.max(exp) * thresholdUP)] = 0
     exp[exp < (np.min(exp) * thresholdDOWN)] = 0
     detectorcleanout = exp
     return detectorcleanout
 
+def median_filter(matrix:np.array([]),filter_N:int=3):
+    median_matrix=cv2.medianBlur(matrix, filter_N)
+    return median_matrix
 
 def clear_bg(exp):
     u, v = exp.shape
@@ -45,9 +47,8 @@ def clear_bg(exp):
     for i in np.arange(u):
         k = (np.sum(exp[i, 1:10]) - np.sum(exp[i, -10:-1]))/(v)/10
         b = np.sum(exp[i, 1:10])/10 - k*10
-        exp_bg = -k * np.arange(v) + b
+        exp_bg = -k * np.arange(v) +b+exp[i, 0]/10
         temp[i, :] = exp[i, :] - exp_bg
-    #print(type(temp))
     return u, v, temp
 
 def gaussian(x, amp, cen, wid):
@@ -55,35 +56,41 @@ def gaussian(x, amp, cen, wid):
     return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
 
-def Gaussian_FWHM(pd_data,center=1277):
+def Gaussian_FWHM(x,y,center=1200,index=1):
     """find FWHM from the imported pd_data [x,y]
 
     Args:
         pd_data (_type_): _description_
     """
-    x = pd_data.values[:, 0]
-    y = pd_data.values[:, 1]
+    
+    # x = pd_data.values[:, 0]
+    # y = pd_data.values[:, 1]
     gmodel = Model(gaussian)
-    result = gmodel.fit(y, x=x, amp=1, cen=center, wid=2.6)
+    result = gmodel.fit(y, x=x, amp=49146, cen=center, wid=2.6)
     print(result.values)
     print(result.fit_report())
     wid_fit=result.params['wid'].value
-    wid_err=result.params['wid'].stderr
+    wid_err=result.params['wid'].stderr 
+    print(f'wid_err:{wid_err}')
     FWHM=wid_fit*2*np.sqrt(np.log(4))
-    if wid_err:
+    if wid_err!= None:
         FWHM_err=wid_err*2*np.sqrt(np.log(4))
+        FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err:.4f}'
     else:
-        FWHM_err='Gauss fit failed'
+        FWHM_err='estimate failed'
+        FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
-    FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     fig=plt.figure(figsize =(16, 9))
-    fig.canvas.manager.window.setWindowTitle("Gaussian fit-raw estimate")
+    fig.canvas.manager.window.setWindowTitle(f"Fit-FWHM-{index}")
     ax=plt.subplot()
     plt.plot(x, y, 'o')
     plt.plot(x, result.init_fit, '--', label='initial fit')
     plt.plot(x, result.best_fit, '-', label='best fit')
     plt.text(0.5, 0.5, s=FWHW_text,color = "m", transform=ax.transAxes,fontsize=15)
+    plt.text(0.5, 1.0, s=f'Gauss FIt-{index}',color = "m", transform=ax.transAxes,fontsize=15)
     plt.legend()
+    return FWHM,FWHM_err
+
 
 root = Tk()
 root.withdraw()
@@ -115,14 +122,14 @@ plt.subplot(2,2,3),plt.plot(row_index,sum_rows_raw),plt.title("sum cols")
 plt.subplot(2,2,2),plt.plot(col_index,sum_cols_raw),plt.title("sum rows")
 
 # selected point near the mid of the line
-p_col=1196
+p_col=1126
 p_row=1042
-half_n=200   # total 2*half_n rows for correction
+half_n=50   # total 2*half_n rows for correction
 
 header_list=['pixels']
 
 
-cut_matrix=matrix[:,p_col-half_n:p_col+half_n].T 
+cut_matrix=matrix[:,p_col-half_n:p_col+half_n] 
 fig2 = plt.figure(figsize =(16, 9)) 
 fig2.canvas.manager.window.setWindowTitle("image data preprocess")
 plt.subplot(3,3,1),plt.imshow(cut_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
@@ -151,9 +158,10 @@ plt.subplot(3,3,8),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 
 thresholdUP = 0.9
 thresholdDOWN = 0.1
-matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
+matrix1 = detectorclean(mean_matrix, noise1=50, noise2=200)
 print(type(matrix1),matrix1.shape)
 row, column, out = clear_bg(matrix1) #2052*400
+#row, column, out = clear_bg(mean_matrix) #2052*400
 print(f'row: {row}\ncolumn: {column}')
 plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=-25,vmax=25),plt.title("clear background")
 plt.colorbar(location='bottom', fraction=0.1)
@@ -163,8 +171,12 @@ col_index=[j for j in range(len(sum_cols_cut)) ]
 plt.subplot(3,3,9),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 
 def shift_pixel(index:int,j:int=1):
-    #return round(0.005 + index*0.005+index**2*(1+j*0.1)*1e-7)
-    return round((0.001+0.005*j)*index+index**2*(1e-7))
+    #return round(0.005 + index*0.01+index**2*(1+j*0.1)*1e-7)
+    #return round((0.001+0.005*j)*index+index**2*(1e-7))
+    #return round((0.005+0.0005*j)*index+index**2*(1e-7)) # best fit results0918-11
+    return round((-0.0007+0.00005*j)*index+index**2*(1e-7)) # best fit results 0918-11
+    #return round((-0.0006+0.00005*j)*index+index**2*(1e-7)) # best fit results 0905-12
+    #return round(-(20/57.0+0.002*j+j**2*(1e-7))*index)  # for test line y=57*x-57000
 
 def shift_arrray(array:np.array([]),n:int=0):
     """shift a array by n position to left if True, else right
@@ -188,8 +200,9 @@ for j in range(-5,5,1):
     for index in range(row):
         temp =cor_matrix[index, :]
         shift_n= shift_pixel(index,j)
+        #print(f'shift pixels: {shift_n} with j={j} and index={index}')
         result = result + shift_arrray(temp,shift_n)
-    header_list.append("intensity")
+    header_list.append(f"intensity{j+1}")
     corrected_list.append(result)
     if j <0:
         plt.subplot(2,1,1),plt.plot(corrected_list[0],result)
@@ -215,7 +228,7 @@ x_correct=pd_data.values[:, 0]
 FWHM_results={}
 for i in range(10):
     y_correct=pd_data.values[:, i+1]
-    FWHM,FWHM_err=Gaussian_FWHM(x_correct,y_correct,center=p_col,index=(1-2*int(i/5))*(i%5))
+    FWHM,FWHM_err=Gaussian_FWHM(x_correct,y_correct,center=p_col,index=(i-5))
     print(f'fit-{i}:{FWHM:.4f},{FWHM_err}\n')
     FWHM_results[f'FitGauss{i}']=(FWHM,FWHM_err)
 for key,value in FWHM_results.items():
@@ -225,4 +238,3 @@ pd_data.to_excel(excel_writer)
 excel_writer.save()
 print(f'save to excel xlsx file successfully\nfile path: {corr_datafile}')
 plt.show()
-
