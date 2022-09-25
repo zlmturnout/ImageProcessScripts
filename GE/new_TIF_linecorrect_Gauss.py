@@ -55,35 +55,40 @@ def gaussian(x, amp, cen, wid):
     return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
 
-def Gaussian_FWHM(pd_data,center=1277):
+def Gaussian_FWHM(x,y,center=1200,index=1):
     """find FWHM from the imported pd_data [x,y]
 
     Args:
         pd_data (_type_): _description_
     """
-    x = pd_data.values[:, 0]
-    y = pd_data.values[:, 1]
+    
+    # x = pd_data.values[:, 0]
+    # y = pd_data.values[:, 1]
     gmodel = Model(gaussian)
-    result = gmodel.fit(y, x=x, amp=1, cen=center, wid=2.6)
+    result = gmodel.fit(y, x=x, amp=49146, cen=center, wid=2.6)
     print(result.values)
     print(result.fit_report())
     wid_fit=result.params['wid'].value
-    wid_err=result.params['wid'].stderr
+    wid_err=result.params['wid'].stderr 
+    print(f'wid_err:{wid_err}')
     FWHM=wid_fit*2*np.sqrt(np.log(4))
-    if wid_err:
+    if wid_err!= None:
         FWHM_err=wid_err*2*np.sqrt(np.log(4))
+        FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err:.4f}'
     else:
-        FWHM_err='Gauss fit failed'
+        FWHM_err='estimate failed'
+        FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
-    FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     fig=plt.figure(figsize =(16, 9))
-    fig.canvas.manager.window.setWindowTitle("Gaussian fit-raw estimate")
+    fig.canvas.manager.window.setWindowTitle(f"Fit-FWHM-{index}")
     ax=plt.subplot()
     plt.plot(x, y, 'o')
     plt.plot(x, result.init_fit, '--', label='initial fit')
     plt.plot(x, result.best_fit, '-', label='best fit')
     plt.text(0.5, 0.5, s=FWHW_text,color = "m", transform=ax.transAxes,fontsize=15)
+    plt.text(0.5, 1.0, s=f'Gauss FIt-{index}',color = "m", transform=ax.transAxes,fontsize=15)
     plt.legend()
+    return FWHM,FWHM_err
 
 root = Tk()
 root.withdraw()

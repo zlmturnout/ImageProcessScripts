@@ -122,7 +122,7 @@ plt.subplot(2,2,3),plt.plot(row_index,sum_rows_raw),plt.title("sum cols")
 plt.subplot(2,2,2),plt.plot(col_index,sum_cols_raw),plt.title("sum rows")
 
 # selected point near the mid of the line
-p_col=1126
+p_col=1084
 p_row=1042
 half_n=50   # total 2*half_n rows for correction
 
