@@ -29,7 +29,6 @@ def fastinterp1(x, y, xi):
 
 
 def detectorclean(exp, noise1, noise2):
-
     exp = exp - np.mean(exp[:, noise1:noise2])
     exp[exp > (np.max(exp) * thresholdUP)] = 0
     exp[exp < (np.min(exp) * thresholdDOWN)] = 0
@@ -109,6 +108,7 @@ sum_cols_raw=np.sum(matrix,axis=1)
 col_index=[j for j in range(len(sum_cols_raw)) ]
 plt.subplot(2,2,3),plt.plot(row_index,sum_rows_raw),plt.title("sum cols")
 plt.subplot(2,2,2),plt.plot(col_index,sum_cols_raw),plt.title("sum rows")
+
 '''
 matrix1 = mpimage.imread(img_path).T
 matrix1 = matrix1[:,:200]

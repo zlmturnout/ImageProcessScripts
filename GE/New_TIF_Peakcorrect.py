@@ -122,7 +122,7 @@ plt.subplot(2,2,3),plt.plot(row_index,sum_rows_raw),plt.title("sum cols")
 plt.subplot(2,2,2),plt.plot(col_index,sum_cols_raw),plt.title("sum rows")
 
 # selected point near the mid of the line
-p_col=1084
+p_col=940
 p_row=1042
 half_n=50   # total 2*half_n rows for correction
 
@@ -132,7 +132,7 @@ header_list=['pixels']
 cut_matrix=matrix[:,p_col-half_n:p_col+half_n] 
 fig2 = plt.figure(figsize =(16, 9)) 
 fig2.canvas.manager.window.setWindowTitle("image data preprocess")
-plt.subplot(3,3,1),plt.imshow(cut_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.subplot(3,3,1),plt.imshow(cut_matrix.T,cmap=cm.rainbow,vmin=1300,vmax=1400)
 plt.colorbar(location='bottom', fraction=0.1),plt.title("cut raw image")
 plt.subplot(3,3,4),plt.hist(cut_matrix.flatten(),bins=100),plt.title("intensity histogram")
 # sum columm plot
@@ -148,7 +148,7 @@ mean_matrix=cv2.medianBlur(cut_matrix, filter_N)
 #mean_matrix = cv2.boxFilter(cut_matrix, -1, (3, 3), normalize=True)
 #mean_matrix = cv2.GaussianBlur(cut_matrix, (5, 5), 1)
 #matrix1 = matrix
-plt.subplot(3,3,2),plt.imshow(mean_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.subplot(3,3,2),plt.imshow(mean_matrix.T,cmap=cm.rainbow,vmin=1300,vmax=1400)
 plt.colorbar(location='bottom', fraction=0.1),plt.title("median blur image")
 plt.subplot(3,3,5),plt.hist(mean_matrix.flatten(),bins=200),plt.title("intensity histogram")
 sum_cols_cut=np.sum(mean_matrix,axis=1)
@@ -174,6 +174,7 @@ def shift_pixel(index:int,j:int=1):
     #return round(0.005 + index*0.01+index**2*(1+j*0.1)*1e-7)
     #return round((0.001+0.005*j)*index+index**2*(1e-7))
     #return round((0.005+0.0005*j)*index+index**2*(1e-7)) # best fit results0918-11
+    return round((-0.0009+0.00005*j)*index+index**2*(1e-7)) # best fit results 0918-11
     return round((-0.0007+0.00005*j)*index+index**2*(1e-7)) # best fit results 0918-11
     #return round((-0.0006+0.00005*j)*index+index**2*(1e-7)) # best fit results 0905-12
     #return round(-(20/57.0+0.002*j+j**2*(1e-7))*index)  # for test line y=57*x-57000

@@ -130,18 +130,18 @@ save_fig=os.path.join(save_folder,f'VisualizeRawImage-{filename}.jpg')
 plt.savefig(save_fig)
 
 # selected point near the mid of the line
-p_col=1084
+p_col=934
 p_row=1042
-half_n=100   # total 2*half_n rows for correction
+half_n=200   # total 2*half_n rows for correction
 '''
 select (half_n=100) rows near the line at both side
 '''
-cut_matrix=matrix[:,p_col-half_n:p_col+half_n].T 
+cut_matrix=matrix[:,p_col-half_n:p_col+half_n]
 
 # plot the cut img  cut_img= from line-100 to line+100
 fig2 = plt.figure(figsize =(16, 9)) 
 fig2.canvas.manager.window.setWindowTitle("image data preprocess")
-plt.subplot(3,3,1),plt.imshow(cut_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.subplot(3,3,1),plt.imshow(cut_matrix.T,cmap=cm.rainbow,vmin=1300,vmax=1400)
 plt.colorbar(location='bottom', fraction=0.1),plt.title("cut raw image")
 plt.subplot(3,3,4),plt.hist(cut_matrix.flatten(),bins=100),plt.title("intensity histogram")
 # sum columm plot
@@ -156,7 +156,7 @@ filter_N=3
 median_matrix=median_filter(cut_matrix,filter_N)
 
 # plot median filter
-plt.subplot(3,3,2),plt.imshow(median_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+plt.subplot(3,3,2),plt.imshow(median_matrix.T,cmap=cm.rainbow,vmin=1300,vmax=1400)
 plt.colorbar(location='bottom', fraction=0.1),plt.title("median blur image")
 plt.subplot(3,3,5),plt.hist(median_matrix.flatten(),bins=200),plt.title("intensity histogram")
 sum_cols_cut=np.sum(median_matrix,axis=1)
@@ -166,10 +166,10 @@ plt.subplot(3,3,8),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 # detect clean
 thresholdUP = 0.9
 thresholdDOWN = 0.1
-clean_matrix = detectorclean(median_matrix.T, noise1=50, noise2=200)
+clean_matrix = detectorclean(median_matrix, noise1=50, noise2=200)
 print(type(clean_matrix),clean_matrix.shape)
 m, n, out = clear_bg(clean_matrix)
-#m, n, out = clear_bg(median_matrix.T)
+#m, n, out = clear_bg(median_matrix)
 print(f'row: {m}\ncolumn: {n}')
 
 # plot the img after median filter and background clean 
@@ -189,11 +189,12 @@ def shift_pixel(index:int,j:int=1):
     #return round(0.005 + index*0.01+index**2*(1+j*0.1)*1e-7)
     #return round((0.001+0.005*j)*index+index**2*(1e-7))
     #return round((0.015+0.0005*j)*index+index**2*(1e-7)) # best fit results
-    return round((-0.0007+0.00005*j)*index+index**2*(1e-7))
+    #return round((-0.0007+0.00005*j)*index+index**2*(1e-7))
+    return round((0.0065+0.0002*j)*index+index**2*(1e-7))
 header_list=['pixels']
 
 cor_matrix = out
-#cor_matrix = median_matrix.T
+#cor_matrix = median_matrix
 new_img = np.zeros((m,n))
 
 index=half_n
@@ -229,11 +230,11 @@ for j in range(-5,5,1):
     corrected_list.append(y_[round(low_lim/20):round(high_lim/20)])
     header_list.append(f"intensity{j+1}")
     if j <0:
-        plt.subplot(2,1,1),plt.plot(corrected_list[0],result)
+        plt.subplot(2,1,1),plt.plot(corrected_list[0],y_[round(low_lim/20):round(high_lim/20)])
         plt.title("correction via shift left-")
         plt.pause(0.1)
     else:
-        plt.subplot(2,1,2),plt.plot(corrected_list[0],result)
+        plt.subplot(2,1,2),plt.plot(corrected_list[0],y_[round(low_lim/20):round(high_lim/20)])
         plt.title("correction via shift right+")
         plt.pause(0.1)
     plt.legend([i for i in range(10)])
@@ -289,5 +290,5 @@ excel_writer = pd.ExcelWriter(corr_datafile)
 pd_data.to_excel(excel_writer)
 excel_writer.save()
 print(f'save to excel xlsx file successfully\nfile path: {corr_datafile}')
-#plt.show()
+plt.show()
 
