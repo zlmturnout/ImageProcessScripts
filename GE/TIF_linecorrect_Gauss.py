@@ -77,6 +77,7 @@ def Gaussian_FWHM(pd_data,center=1277):
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
     FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     fig=plt.figure(figsize =(16, 9))
+    fig.canvas.manager.window.setWindowTitle("Fit-FWHM")
     ax=plt.subplot()
     plt.plot(x, y, 'o')
     plt.plot(x, result.init_fit, '--', label='initial fit')
@@ -130,9 +131,9 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1131
+p_col=1085
 p_row=1042
-half_n=500   # total 2*half_n rows for correction
+half_n=100   # total 2*half_n rows for correction
 
 header_list=['pixels']
 

@@ -55,35 +55,40 @@ def gaussian(x, amp, cen, wid):
     return (amp / (sqrt(2*pi) * wid)) * exp(-(x-cen)**2 / (2*wid**2))
 
 
-def Gaussian_FWHM(pd_data,center=1277):
+def Gaussian_FWHM(x,y,center=1200,index=1):
     """find FWHM from the imported pd_data [x,y]
 
     Args:
         pd_data (_type_): _description_
     """
-    x = pd_data.values[:, 0]
-    y = pd_data.values[:, 1]
+    
+    # x = pd_data.values[:, 0]
+    # y = pd_data.values[:, 1]
     gmodel = Model(gaussian)
-    result = gmodel.fit(y, x=x, amp=1, cen=center, wid=2.6)
+    result = gmodel.fit(y, x=x, amp=49146, cen=center, wid=2.6)
     print(result.values)
     print(result.fit_report())
     wid_fit=result.params['wid'].value
-    wid_err=result.params['wid'].stderr
+    wid_err=result.params['wid'].stderr 
+    print(f'wid_err:{wid_err}')
     FWHM=wid_fit*2*np.sqrt(np.log(4))
-    if wid_err:
+    if wid_err!= None:
         FWHM_err=wid_err*2*np.sqrt(np.log(4))
+        FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err:.4f}'
     else:
-        FWHM_err='Gauss fit failed'
+        FWHM_err='estimate failed'
+        FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
-    FWHW_text=f'FWHM={FWHM:.4f} +/-{FWHM_err}'
     fig=plt.figure(figsize =(16, 9))
-    fig.canvas.manager.window.setWindowTitle("Gaussian fit-raw estimate")
+    fig.canvas.manager.window.setWindowTitle(f"Fit-FWHM-{index}")
     ax=plt.subplot()
     plt.plot(x, y, 'o')
     plt.plot(x, result.init_fit, '--', label='initial fit')
     plt.plot(x, result.best_fit, '-', label='best fit')
     plt.text(0.5, 0.5, s=FWHW_text,color = "m", transform=ax.transAxes,fontsize=15)
+    plt.text(0.5, 1.0, s=f'Gauss FIt-{index}',color = "m", transform=ax.transAxes,fontsize=15)
     plt.legend()
+    return FWHM,FWHM_err
 
 root = Tk()
 root.withdraw()
@@ -113,25 +118,9 @@ sum_cols_raw=np.sum(matrix,axis=1)
 col_index=[j for j in range(len(sum_cols_raw)) ]
 plt.subplot(2,2,3),plt.plot(row_index,sum_rows_raw),plt.title("sum cols")
 plt.subplot(2,2,2),plt.plot(col_index,sum_cols_raw),plt.title("sum rows")
-'''
-matrix1 = mpimage.imread(img_path).T
-matrix1 = matrix1[:,:200]
-# show raw CCD image
-'''
-
-# Background subtraction
-""" ExposureTime = 600 #seconds
-background_aqn_time = 600 #seconds
-extract_background=True
-if extract_background:
-    rawImageData = 1. * matrix
-    if background.shape == matrix.shape[:2]:
-        if background_aqn_time:
-            matrix -= np.array(ExposureTime) * background \
-                / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1126
+p_col=1196
 p_row=1042
 half_n=200   # total 2*half_n rows for correction
 
@@ -169,120 +158,73 @@ thresholdUP = 0.9
 thresholdDOWN = 0.1
 matrix1 = detectorclean(mean_matrix.T, noise1=50, noise2=200)
 print(type(matrix1),matrix1.shape)
-m, n, out = clear_bg(matrix1)
-print(f'row: {m}\ncolumn: {n}')
+row, column, out = clear_bg(matrix1) #2052*400
+print(f'row: {row}\ncolumn: {column}')
 plt.subplot(3,3,3),plt.imshow(out.T,cmap=cm.rainbow,vmin=-25,vmax=25),plt.title("clear background")
 plt.colorbar(location='bottom', fraction=0.1)
 plt.subplot(3,3,6),plt.hist(out.flatten(),bins=200),plt.title("intensity histogram")
 sum_cols_cut=np.sum(out.T,axis=1)
 col_index=[j for j in range(len(sum_cols_cut)) ]
 plt.subplot(3,3,9),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
-#plt.show()
-
-# line correction
-#matrix2 = out
-#cor_matrix = mean_matrix.T
-cor_matrix = out
-new_img = np.zeros((m,n))
-'''
-plt.subplot(1,1,1)
-plt.imshow(matrix)
-plt.show()
-'''
-index=half_n
-corrected_list=[]
-# left move rows, dd = round(k*ii)
-fig3 = plt.figure(figsize =(16, 9))
-fig3.canvas.manager.window.setWindowTitle("Visualize peak correction")
-low_lim = round(index*20 -1200)
-high_lim = round(index*20 + 1200)
-xinitial = np.arange(n)
-corrected_list.append(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_col)
 
 def shift_pixel(index:int,j:int=1):
     #return round(0.005 + index*0.005+index**2*(1+j*0.1)*1e-7)
     return round((0.001+0.005*j)*index+index**2*(1e-7))
 
-for j in range(0,5,1):
-    #k = 0.4 + j*0.1+j**2*(1e-07)
-    #k = 0.05 + j*0.1+j**2*(1e-07)
-    #k = 0.01 + j*0.01+j**2*(1e-07)
-    #k = 0.01 + j*0.01+j**2*(1e-07)
-    k = 0.01 + j*0.01+j**2*(1e-07)
-    low_lim = round(index*20 -1200)
-    high_lim = round(index*20 + 1200)
-    #low_lim = 3640
-    #high_lim = 14640
-    new_X = np.arange(low_lim, high_lim)
-    result = np.zeros(len(new_X))
-    xinitial = np.arange(n)
-    xinterp = np.arange(0, n, 0.05)
-    xx = np.linspace(0, len(xinterp), n)
-    for ii in range(m):
-        temp =cor_matrix[ii, :]
-        ntemp = fastinterp1(xinitial, temp, xinterp)
-        #dd = round(k*ii)
-        dd= shift_pixel(ii,j)
-        new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
-        #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
-        #new_img = f(xx)
-        result = result + ntemp[low_lim-dd:high_lim-dd]
-    #print(result)
-    
-    y_ = fastinterp1(new_X, result, xx)
-    # append data
-    
-    corrected_list.append(y_[round(low_lim/20):round(high_lim/20)])
-    header_list.append("intensity")
-    plt.subplot(2,1,1),plt.plot(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_col,
-        y_[round(low_lim/20):round(high_lim/20)])
-    plt.title("correction via shift right+")
-    plt.pause(0.5)
-    plt.legend([i for i in range(10)])
+def shift_arrray(array:np.array([]),n:int=0):
+    """shift a array by n position to left if True, else right
 
-# right move rows, dd = -round(k*ii)
-for j in range(0,5,1):
-    #k = 0.4 + j*0.1+j**2*(1e-07)
-    #k = 0.05 + j*0.1+j**2*(1e-07)
-    k = 0.00 + j*0.01+0*j**2*(1e-07)
-    low_lim = round(index*20 -1200)
-    high_lim = round(index*20 + 1200)
-    #low_lim = 3640
-    #high_lim = 14640
-    new_X = np.arange(low_lim, high_lim)
-    result = np.zeros(len(new_X))
-    xinitial = np.arange(n)
-    xinterp = np.arange(0, n, 0.05)
-    xx = np.linspace(0, len(xinterp), n)
-    for ii in range(m):
-        temp =cor_matrix[ii, :]
-        ntemp = fastinterp1(xinitial, temp, xinterp)
-        #dd = -round(k*ii)
-        dd= shift_pixel(ii,j*-1)
-        new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
-        #f=interpolate.interp1d(new_X,ntemp[low_lim-dd:high_lim-dd],kind='slinear')
-        #new_img = f(xx)
-        result = result + ntemp[low_lim-dd:high_lim-dd]
-    print(result)
-    y_ = fastinterp1(new_X, result, xx)
-    # append data
-    corrected_list.append(y_[round(low_lim/20):round(high_lim/20)])
+    Args:
+        array (np.array): 1D array data
+        n (int, optional): how many position Defaults to 0.positive is shift left else right
+    """
+    return np.append(array[n:],array[:n])
+
+cor_matrix = out
+#cor_matrix = median_matrix.T
+new_img = np.zeros((row,column))
+corrected_list=[]
+corrected_list.append(np.array([i for i in range(column)])-half_n+p_col)
+fig3 = plt.figure(figsize =(16, 9)) 
+fig3.canvas.manager.window.setWindowTitle("Line data by shift")
+
+for j in range(-5,5,1):
+    result = np.zeros(column)
+    for index in range(row):
+        temp =cor_matrix[index, :]
+        shift_n= shift_pixel(index,j)
+        result = result + shift_arrray(temp,shift_n)
     header_list.append("intensity")
-    plt.subplot(2,1,2),plt.plot(xinitial[round(low_lim/20):round(high_lim/20)]-half_n+p_col,
-        y_[round(low_lim/20):round(high_lim/20)])
-    plt.title("correction via shift left-")
-    plt.pause(0.5)
+    corrected_list.append(result)
+    if j <0:
+        plt.subplot(2,1,1),plt.plot(corrected_list[0],result)
+        plt.title("correction via shift left-")
+        plt.pause(0.5)
+    else:
+        plt.subplot(2,1,2),plt.plot(corrected_list[0],result)
+        plt.title("correction via shift right+")
+        plt.pause(0.5)
 plt.legend([i for i in range(10)])
 
 # save corrected_list data
-corr_datafile=os.path.join(save_folder,f'New03corrected-{filename}.xlsx')
+#corr_datafile=os.path.join(save_folder,f'Peakcorrected_half_n1196-2_square200-{half_n}-{filename}.xlsx')
+corr_datafile=os.path.join(save_folder,f'NewFit-half{half_n}_peak{p_col}-{filename}.xlsx')
 
 corrected_data=np.array(corrected_list,dtype=np.float32).T
 # save to excel
 pd_data=pd.DataFrame(corrected_data,columns=header_list)
 print(pd_data)
+
 # fit the pd_data
-Gaussian_FWHM(pd_data,center=p_col)
+x_correct=pd_data.values[:, 0]
+FWHM_results={}
+for i in range(10):
+    y_correct=pd_data.values[:, i+1]
+    FWHM,FWHM_err=Gaussian_FWHM(x_correct,y_correct,center=p_col,index=(1-2*int(i/5))*(i%5))
+    print(f'fit-{i}:{FWHM:.4f},{FWHM_err}\n')
+    FWHM_results[f'FitGauss{i}']=(FWHM,FWHM_err)
+for key,value in FWHM_results.items():
+    print(f'{key}: {value}\n')
 excel_writer = pd.ExcelWriter(corr_datafile)
 pd_data.to_excel(excel_writer)
 excel_writer.save()

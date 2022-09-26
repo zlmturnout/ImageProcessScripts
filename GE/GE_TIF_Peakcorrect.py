@@ -132,7 +132,7 @@ plt.savefig(save_fig)
 # selected point near the mid of the line
 p_col=1084
 p_row=1042
-half_n=200   # total 2*half_n rows for correction
+half_n=100   # total 2*half_n rows for correction
 '''
 select (half_n=100) rows near the line at both side
 '''
@@ -219,7 +219,7 @@ for j in range(-5,5,1):
         ntemp = fastinterp1(xinitial, temp, xinterp)
         dd= shift_pixel(ii,j)
         #print(f'shift pixels: {dd} with j={j} and index={ii}')
-        new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
+        #new_img[ii,:] = fastinterp1(new_X,ntemp[low_lim-dd:high_lim-dd],xx)
         result = result + ntemp[low_lim-dd:high_lim-dd]
     #print(result)
     
@@ -282,7 +282,7 @@ for i in range(10):
     y_correct=pd_data.values[:, i+1]
     FWHM,FWHM_err=Gaussian_FWHM(x_correct,y_correct,center=p_col,index=i,info=filename)
     print(f'fit-{i}:{FWHM:.4f},{FWHM_err}\n')
-    FWHM_results[f'Fit-{i}']=(FWHM,FWHM_err)
+    FWHM_results[f'FitGauss{i}']=(FWHM,FWHM_err)
 for key,value in FWHM_results.items():
     print(f'{key}: {value}\n')
 excel_writer = pd.ExcelWriter(corr_datafile)

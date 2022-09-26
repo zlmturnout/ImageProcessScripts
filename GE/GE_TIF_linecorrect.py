@@ -127,9 +127,9 @@ if extract_background:
                 / background_aqn_time """
 
 # selected point near the mid of the line
-p_col=1131
+p_col=1084
 p_row=1042
-half_n=500   # total 2*half_n rows for correction
+half_n=100   # total 2*half_n rows for correction
 
 header_list=['pixels']
 
