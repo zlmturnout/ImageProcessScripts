@@ -102,6 +102,24 @@ def shift_pixel(index:int,j:int=1):
     #return round((-0.0006+0.00005*j)*index+index**2*(1e-7)) # best fit results 0905-12
     #return round(-(20/57.0+0.002*j+j**2*(1e-7))*index)  # for test line y=57*x-57000
 
+def save_pd_data(pd_data: pd.DataFrame, path, filename: str):
+    """
+    save pandas DataForm data to excel/csv/json file by path/filename
+    :param pd_data: pandas dataFrame
+    :param path:
+    :param filename:
+    :return:
+    """
+    save_path = path
+    if not os.path.isdir(path):
+        save_path = os.getcwd()
+    excel_file_path = os.path.join(save_path, filename + '.xlsx')
+    # excel writer
+    excel_writer = pd.ExcelWriter(excel_file_path)
+    pd_data.to_excel(excel_writer)
+    excel_writer.save()
+    print(f'save to excel xlsx file {excel_file_path} successfully')
+
 def cal_shift_pixel(index:int,j:int=1):
     """calculate the shift pixels 
     y=a+b*x+c*x**2  # a=0
@@ -116,10 +134,10 @@ def cal_shift_pixel(index:int,j:int=1):
     b=-0.006+0.0001*j
     #b=0.004+0.0001*j
     return round(b*index+index**2*(2e-7)),b
-    
+
 
 def shift_arrray(array:np.array([]),n:int=0):
-    """shift a array by n position to left if True, else right
+    """shift a array by n position to positive is shift left else right
 
     Args:
         array (np.array): 1D array data
@@ -134,7 +152,6 @@ def minimize_FWHM(peak_data:np.array([]),j_n:int=100,p_col:int=935):
         peak_data (np.array): _description_
         j_n (int, optional): _description_. Defaults to 100.
         p_col (int, optional): _description_. Defaults to 935.
-
     Returns:
         min_result:[FWHM,{"para":(j,b_para)},Fit_results,(x_list,result)]
     """
@@ -194,9 +211,8 @@ def get_corrected_img(peak_data:np.array([]),j:int=0,p_col:int=935):
     FWHM_info=[FWHM,{"para":(j,b_para)},Fit_results,(x_list,result)]
     return corr_peakdata,FWHM_info
 
-def partial_peak_correct(peak_data:np.array([]),slice_n:int=50,p_col:int=935,save_folder:str='./'):
-    """correct peak data by each slice (50row each ), add all slice results
-
+def partial_peak_correct(peak_data:np.array([]),slice_n:int=50,p_col:int=935,save_folder:str='./',filename:str='Tif_img'):
+    """correct peak data by each slice (50 row each), add all slice results
     Args:
         peak_data (np.array): _description_
         slice_n (int, optional): _description_. Defaults to 50.
@@ -204,17 +220,62 @@ def partial_peak_correct(peak_data:np.array([]),slice_n:int=50,p_col:int=935,sav
     """
     row,column=peak_data.shape
     half_n=round(column/2)
-    x_list=np.array([i for i in range(column)])-half_n+p_col
+    # for all slice corrected data and centered data (to p_col)
+    slice_datalist=[]
+    center_datalist=[]
+    # for each slice corrected data
+    slice_cor_headerlist=["id",'FWHM','FWHM_err',"cen","cen_err","wid","wid_err","j","b_para"]
+    slice_cor_datalist=[]
+
+    x_array=np.array([i for i in range(column)])-half_n+p_col
+    slice_datalist.append(x_array)
+    center_datalist.append(x_array)
     # cut the peak image into slices
     peak_slices=[]
     n_rows=int(row/slice_n)
+    fulladd_array=np.zeros(column)
     for i in range(0,row,n_rows):
         peak_slices.append(peak_data[i:i+n_rows],)
+    #peak_slices.pop(-1)
     for index,each_slice in enumerate(peak_slices):
         min_result,j,para_b=minimize_FWHM(each_slice,j_n=100,p_col=p_col)
         print(f'{index}-find minimal FWHM: {min_result[0]} with para=({j},{para_b})')
         plot_fit_line(min_result,index,save_folder)
+        #min_result=[FWHM,{"para":(j,b_para)},Fit_results,(x_list,result)]
+        slicefit_rep=min_result[-2]
+        slice_cor_datalist.append([index,*slicefit_rep["FWHM"],*slicefit_rep["cen"],*slicefit_rep["wid"],*min_result[1]['para']])
         #print(f'{index}-find minimal FWHM: {min_result[0]} with para={min_result[1]["para"]}')
+        # shift the fitted peak  center to p_col for futher addition
+        fit_array=min_result[-2]['origin_data'][1]
+        fit_center=min_result[-2]["cen"][0]
+        cen_shift_n=round(fit_center-p_col)
+        center_array=shift_arrray(fit_array,cen_shift_n)
+        slice_datalist.append(fit_array)
+        center_datalist.append(center_array)
+        # all slice arrays add into one 
+        fulladd_array+=center_array
+    # all slice array add into one and Gauss fit 
+    center_datalist.append(fulladd_array)
+    #print(fulladd_array)
+    Fullfit_results,fulladd_FWHM=GaussianFit(x_array,fulladd_array,p_col,info='Full addition-Gaussfit')
+    Total_add_result=[fulladd_FWHM,{"para":"Full addition-Gaussfit"},Fullfit_results,(x_array,fulladd_array)]
+    plot_fit_line(Total_add_result,index=slice_n,save_folder=save_folder)
+    # add fullfit result
+    slice_cor_datalist.append([slice_n,*Fullfit_results["FWHM"],*Fullfit_results["cen"],*Fullfit_results["wid"],0,0])
+    # save to excel file
+
+    slice_data=np.array(slice_datalist,dtype=np.float32).T
+    center_data=np.array(center_datalist,dtype=np.float32).T
+    
+    # save to excel
+    corr_pddata=pd.DataFrame(slice_cor_datalist,columns=slice_cor_headerlist)
+    slice_pddata=pd.DataFrame(slice_data)
+    center_pddata=pd.DataFrame(center_data)
+    save_pd_data(slice_pddata,save_folder,filename=f'Gaussfit_Slice_p_col-{p_col}-{filename}')
+    save_pd_data(center_pddata,save_folder,filename=f'Gaussfit_Centered_p_col-{p_col}-{filename}')
+    save_pd_data(corr_pddata,save_folder,filename=f'Correction_slice_resports-{filename}')
+
+
 
 def plot_fit_line(min_result:list,index:int=0,save_folder:str='./'):
     """ min_result:[FWHM,{"para":(j,b_para)},Fit_results,(x_list,result)]
@@ -229,7 +290,9 @@ def plot_fit_line(min_result:list,index:int=0,save_folder:str='./'):
     plt.plot(*min_result[-2]['origin_data'], 'o')
     plt.plot(*min_result[-2]['ini_fit'], '--', label='initial fit')
     plt.plot(*min_result[-2]['best_fit'], '-', label='best fit')
-    plt.text(0.5, 0.5, s=f'FWHM={min_result[-2]["FWHM"][0]:.4f} +/-{min_result[-2]["FWHM"][1]:.4f}\n with para={min_result[1]["para"]}',color = "m", transform=ax.transAxes,fontsize=15)
+    FWHM_text=f'FWHM={min_result[-2]["FWHM"][0]:.4f} +/-{min_result[-2]["FWHM"][1]:.4f}'
+    cen_text=f'cen={min_result[-2]["cen"][0]:.4f} +/-{min_result[-2]["cen"][1]:.4f}'
+    plt.text(0.5, 0.5, s=FWHM_text+'\n'+cen_text+f'\nwith para={min_result[1]["para"]}',color = "m", transform=ax.transAxes,fontsize=15)
     plt.title(f"Best Gaussfit with minimal FWHM-Slice-{index}")
     plt.legend()
     save_fig=os.path.join(save_folder,f'Slice-{index}_fit_results.jpg')
@@ -302,5 +365,5 @@ if __name__=="__main__":
     sum_cols_cut=np.sum(corr_peakdata.T,axis=1)
     col_index=[j for j in range(len(sum_cols_cut)) ]
     plt.subplot(4,1,4),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
-    partial_peak_correct(clean_matrix,slice_n=20,p_col=p_col,save_folder=save_folder)
+    partial_peak_correct(clean_matrix,slice_n=19,p_col=p_col,save_folder=save_folder,filename=filename)
     plt.show()
