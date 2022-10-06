@@ -1,7 +1,8 @@
 # coding: utf-8
-from gettext import find
 import os, sys,time,datetime
 import traceback
+
+from pyparsing import col
 import numpy as np
 import matplotlib.pyplot as plt
 import tkinter
@@ -121,7 +122,7 @@ def save_pd_data(pd_data: pd.DataFrame, path, filename: str):
     excel_writer = pd.ExcelWriter(excel_file_path)
     pd_data.to_excel(excel_writer)
     excel_writer.save()
-    print(f'save to excel xlsx file {excel_file_path} successfully')
+    #print(f'save to excel xlsx file {excel_file_path} successfully')
 
 def direct_addrows_FWHM(full_data:np.array([]),p_col:int=935,save_folder:str='./',filename:str='direct_addrows'):
     """find the FWHM by direct addtion of all rows
@@ -179,7 +180,7 @@ def get_slice_peaks(matrix_data:np.array([]),slice_n:int=100,p_col:int=935)->tup
     """
     row,column=matrix_data.shape
     half_col=round(column/2)
-    n_rows=round(row/slice_n)
+    n_rows=int(row/slice_n)
     #row_list=[i*n_rows+round(n_rows/2) for i in range(slice_n)]
     row_list=[]
     y_list=[]
@@ -189,6 +190,7 @@ def get_slice_peaks(matrix_data:np.array([]),slice_n:int=100,p_col:int=935)->tup
         y_list.append(find_peak_center(slice_data))
     col_list=np.array(y_list)-half_col+p_col
     #print(row_list,col_list)
+
     return (row_list,col_list)
 
 def peak_curve_func(x,a:float,b:float,c:float):
@@ -198,12 +200,13 @@ def peakline_curve_fit(x_list:np.array([]),y_list:np.array([])):
     fit_status=True
     try:
         popt, pcov = curve_fit(peak_curve_func, x_list, y_list) # 拟合方程，参数包括func，xdata，ydata，
-        # 有popt和pcov两个个参数，其中popt参数为a，b，c，pcov为拟合参数的协方差
+        # 有popt和pcov两个参数，其中popt参数为a，b，c，pcov为拟合参数的协方差
     except Exception as e:
         print(traceback.format_exc()+e)
         fit_status=False
     else:
-        print(f'find parameter [a,b,c]={popt} \n with pcov={pcov}')
+        print(f'find parameter [a,b,c]={popt}' )
+        #print(f'\n with pcov={pcov}')
     return popt,fit_status
 
 def cal_shift_pixel(index:int,p_col:int,a,b,c):
@@ -230,7 +233,7 @@ def correlation_FWHM(peak_data:np.array([]),slice_n:int=20,p_col:int=935,save_fo
         p_col (int, optional): center col index of the peak data . Defaults to 935.
     """
     row,column=peak_data.shape
-    print(f'peak-line 2D matrix\nrow:{row},column:{column}')
+    #print(f'peak-line 2D matrix\nrow:{row},column:{column}')
     half_n=round(column/2)
     x_list=np.array([i for i in range(column)])-half_n+p_col 
     row_list,col_list=get_slice_peaks(peak_data,slice_n=slice_n,p_col=p_col)
@@ -249,10 +252,12 @@ def correlation_FWHM(peak_data:np.array([]),slice_n:int=20,p_col:int=935,save_fo
             print(f'FWHM estimated failed with parameter(a,b,c)={pcov}):\n{Fit_results} ')
         else:
             # Gaussian fit success
+            Fit_results['para']=f'[a,b,c]=[{a:.4f},{b:.4e},{c:.4e}]'
             print(f'get FWHM={FWHM:.4f}+/-{Fit_results["FWHM"][1]:4f} by correlation method with slice={slice_n} and p_col={p_col}')
-    slice_peakdata=pd.DataFrame({"row":row_list,"center_col":col_list})
-    save_pd_data(slice_peakdata,save_folder,filename=f'Gaussfit_Correlation_p_col-{p_col}-{filename}')
-    plot_GaussFit_results(Fit_results,save_folder,filename)
+            slice_peakdata=pd.DataFrame({"row":row_list,"center_col":col_list})
+            save_pd_data(slice_peakdata,save_folder,filename=f'Gaussfit_Correlation_p_col-{p_col}-{filename}')
+            plot_GaussFit_results(Fit_results,save_folder,filename)
+    return Fit_results,FWHM
 
 def plot_GaussFit_results(Fit_results:dict,save_folder:str='./',title:str='peak-img-fit'):
     """plot the Gauss fit line and FWHM results
@@ -269,12 +274,35 @@ def plot_GaussFit_results(Fit_results:dict,save_folder:str='./',title:str='peak-
     plt.plot(*Fit_results['best_fit'], '-', label='best fit')
     FWHM_text=f'FWHM={Fit_results["FWHM"][0]:.4f} +/-{Fit_results["FWHM"][1]:.4f}'
     cen_text=f'cen={Fit_results["cen"][0]:.4f} +/-{Fit_results["cen"][1]:.4f}'
-    plt.text(0.5, 0.5, s=FWHM_text+'\n'+cen_text+f'\n',color = "m", transform=ax.transAxes,fontsize=15)
+    para_text=Fit_results.get('para','') 
+    plt.text(0.7, 0.5, s=FWHM_text+'\n'+cen_text+f'\n'+para_text,color = "m", transform=ax.transAxes,fontsize=15)
     plt.title(f'Gaussfit with FWHM by {Fit_results["info"]}')
     plt.legend()
     save_fig=os.path.join(save_folder,f'FWHM_{Fit_results["info"]}_{title}.jpg')
     plt.savefig(save_fig)
     
+def minimal_FWHM_correlation(peak_data:np.array([]),slice_n:int=100,p_col:int=935,save_folder:str='./',filename:str='Tif_img'):
+    row,column=peak_data.shape
+    min_FWHM=column
+    min_result=[]
+    FWHM_list=[5.0]
+    slice_list=[10,20,50,100,120,180,200,250,300]
+    for col_index in range(p_col-5,p_col+5):
+        for slices in slice_list:
+            Fit_results,FWHM=correlation_FWHM(peak_data,slice_n=slices,p_col=col_index,save_folder=save_folder,filename=filename)
+            if FWHM==-1: 
+                print(f'FWHM estimated failed with parameter(slice_n={slices},p_col={col_index}):\n{Fit_results} ')
+            else:
+                FWHM_list.append(FWHM)
+                FWHM_array=np.array(FWHM_list[:-1])
+            # Gaussian fit success
+                if FWHM<min_FWHM and FWHM>np.average(FWHM_array)*0.6:
+                    min_FWHM=FWHM
+                    min_result=[Fit_results,FWHM,f'Slice_n-{slices}_p_col-{col_index}']
+                else:
+                    pass
+    print(f'find minimal FWHM={min_result[1]:.4f} with parameter {min_result[-1]}')
+    return min_result
 
 
 
@@ -290,7 +318,7 @@ if __name__=="__main__":
     filename,extension=os.path.splitext(file)
     print(f'save folder: {save_folder}\n filename:{filename}, type:{extension}')
     # selected point near the mid of the line
-    p_col=1081
+    p_col=1133
     p_row=1042
     half_n=50   # total 2*half_n rows for correction
 
@@ -325,9 +353,21 @@ if __name__=="__main__":
     col_index=[j for j in range(len(sum_cols_cut)) ]
     plt.subplot(3,3,9),plt.plot(col_index,sum_cols_cut),plt.title("sum cols")
 
+    # find peak-line center in  each slice and display
+    slice_n=100
+    row_list,col_list=get_slice_peaks(clean_matrix,slice_n=slice_n,p_col=p_col)
+    fig3 = plt.figure(figsize =(16, 9)) 
+    fig3.canvas.manager.window.setWindowTitle("Display slice peak center")
+    plt.imshow(img_matrix,cmap=cm.rainbow,vmin=1300,vmax=1380)
+    plt.colorbar(location='bottom', fraction=0.1),plt.title("slice peak center")
+    plt.plot(col_list,row_list,'o',label='slice center pixel',markersize=0.5,color='b')
+    
+
     # FWHM by direct add rows
     direct_addrows_FWHM(clean_matrix,p_col=p_col,save_folder=save_folder,filename=filename)
     # find the peak center for each slice
-    correlation_FWHM(clean_matrix,slice_n=50,p_col=p_col,save_folder=save_folder,filename=filename)
+    correlation_FWHM(clean_matrix,slice_n=slice_n,p_col=p_col,save_folder=save_folder,filename=filename)
+    
+    #minimal_FWHM_correlation(clean_matrix,slice_n=slice_n,p_col=p_col,save_folder=save_folder,filename=filename)
     plt.show()
 
