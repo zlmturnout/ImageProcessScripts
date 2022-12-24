@@ -53,11 +53,40 @@ def extract_pic_folder(src_path, dst_path,pic_list,filetype=None):
                 extract_pic_folder(folder_path,dst_path,pic_list)
     return pic_list
 
+def extract_pics(src_path,dst_path,filetype=None):
+    """extract every pic in the folder to another folder with index 
+
+    Args:
+        src_path (_type_): _description_
+        dst_path (_type_): _description_
+        filetype (_type_, optional): _description_. Defaults to None.
+    """
+    All_pics_N=0
+    if filetype is None:
+        filetype = ['.jpg', '.png', '.tiff', '.webp', '.png']
+    if not os.path.isdir(src_path):
+        print(f'{src_path} is not a valid path!')
+        return
+    if not os.path.isdir(dst_path):
+        dst_path = os.getcwd()
+    for root, dirs, files in os.walk(src_path, topdown=True):
+        for item in files:
+            filename, extension = os.path.splitext(item)
+            if extension in filetype:
+                All_pics_N += 1
+                # create new image  folder and get abs_path
+                origin_pic_path=os.path.join(root, item)
+                new_pic_path=os.path.join(dst_path,str(All_pics_N)+extension)
+                shutil.copy(origin_pic_path, new_pic_path)
+    print(f'all pics num: {All_pics_N}')
+            
+
                 
 if __name__ == "__main__":
     #download_path = r'F:\BeautifulPictures'
-    download_path=r'E:\迅雷下载\MaryMoody'
-    save_path = r'F:\Beautyleg'
-    pic_list=extract_pic_folder(download_path,save_path,[])
-    print(f'get all pics:{pic_list} with number {len(pic_list)}')
-    
+    download_path=r'L:\Entertain\PICS\BeautifulPictures2\NvShen\林文文'
+    save_path = r'L:\Entertain\PICS\Testwallpapaers\林文文'
+    save_path = create_path(save_path)
+    #pic_list=extract_pic_folder(download_path,save_path,[])
+    #print(f'get all pics:{pic_list} with number {len(pic_list)}')
+    extract_pics(download_path,save_path)
