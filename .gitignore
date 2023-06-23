@@ -9,6 +9,8 @@ UI/__pycache__
 *.png 
 *.csv
 *.xlsx
+*.jpg
+*.pdf
 # gitignore
 #.gitignore
 

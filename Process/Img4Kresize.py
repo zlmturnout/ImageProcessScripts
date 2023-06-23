@@ -34,6 +34,6 @@ def resize4K_img(img_file:str,height:int=2160,width:int=3840):
     print(f'image process finished in {time.monotonic()-start_time:.2f}s')
 
 if __name__ == "__main__":
-    img="C://Users//Limin  Zhou//Pictures//017.jpg"
+    img="C://Users//Limin  Zhou//Pictures//AI_wallpaper//flowers.png"
     resize4K_img(img)
 
