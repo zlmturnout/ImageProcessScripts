@@ -594,6 +594,59 @@ class TifAutoCorrelation(object):
         save_fig=os.path.join(self.save_path,f'Autocorrelated_img_{filename}.pdf')
         plt.savefig(save_fig)
 
+    def plot_spectral_data(self,raw_data:np.array([]),corr_peakdata:np.array([]),pd_spectral_data:pd.DataFrame,filename:str='Autocorrelated_E_out'):
+        """plot the corrected any tif data
+
+        Args:
+            raw_data (np.array): _description_
+            corr_peakdata (np.array): _description_
+            pd_spectral_data (pd.DataFrame): _description_
+            filename (str, optional): _description_. Defaults to 'Autocorrelated_E_out'.
+        """
+        vmin=np.min(raw_data)
+        vmax=np.average(self.median_filter(raw_data))+100
+        # display corrected img
+        #fig, axs = plt.subplots(3, 2, tight_layout=True,figsize=(16, 9))
+        fig=plt.figure(tight_layout=True,figsize=(16, 9))
+        fig.canvas.manager.window.setWindowTitle("Display raw and corrected image")
+        # RAW image
+        raw_ax=plt.subplot(221)
+        raw_im=raw_ax.imshow(raw_data,cmap=cm.rainbow,vmin=vmin,vmax=vmax)
+        raw_ax.tick_params(top=False, labeltop=True, bottom=True, labelbottom=False)
+        fig.colorbar(raw_im,ax=raw_ax,location='right', fraction=0.1)
+        raw_ax.set_title("Raw img")
+        # corrected data
+        corr_ax=plt.subplot(223)
+        im=corr_ax.imshow(corr_peakdata,cmap=cm.rainbow,vmin=vmin,vmax=vmax)
+        corr_ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
+        secax = corr_ax.secondary_xaxis('bottom', functions=(self.colIndex_To_Energy, self.Energy_To_colIndex))
+        secax.set_xlabel('Energy(eV)')
+        secax.xaxis.set_major_locator(MaxNLocator(5)) 
+        fig.colorbar(im,ax=corr_ax,location='right', fraction=0.1)
+        corr_ax.set_title("Autocorrelation corrected img")
+        # spectral data
+        E_out_list=pd_spectral_data['EnergyOut(eV)']
+        sum_result=pd_spectral_data['Intensity']
+        NormalizeSub_I=pd_spectral_data['Normalized_Sub_Intensity']
+        NormalizeDi_I=pd_spectral_data['Normalized_Di_Intensity']
+        NormalizeLn_I=pd_spectral_data['Normalized_Ln_Intensity']
+        Nor_ax1=plt.subplot(222)
+        Nor_ax1.plot(E_out_list,sum_result, marker='o', markersize=1, markerfacecolor='orchid',
+                              markeredgecolor='orchid', linestyle='-', color='c', label='corrected peak spectra')
+        Nor_ax1.set_xlabel('Energy(eV)',fontsize=12, color='#20B2AA')
+        Nor_ax1.set_ylabel('intensity',fontsize=12, color='#20B2AA')
+        Nor_ax1.set_title(f"Sum_Corrected Spectral_{filename}",loc='center')
+        Nor_ax2=plt.subplot(224)
+        Nor_ax2.plot(E_out_list,NormalizeSub_I, marker='o', markersize=1, markerfacecolor='orchid',
+                              markeredgecolor='orchid', linestyle='-', color='c', label='corrected peak spectra')
+        Nor_ax2.set_xlabel('Energy(eV)',fontsize=12, color='#20B2AA')
+        Nor_ax2.set_ylabel('Sub_intensity',fontsize=12, color='#20B2AA')
+        Nor_ax2.set_title(f"Normalized_Sub_Corrected_Spectral_{filename}",loc='center')
+        # save figure
+        save_fig=os.path.join(self.save_path,f'Autocorrelated_img_{filename}.pdf')
+        plt.savefig(save_fig)
+
+
 if __name__=="__main__":
     root = Tk()
     root.withdraw()
@@ -615,8 +668,10 @@ if __name__=="__main__":
     TIF_Correction=TifAutoCorrelation(E_ref=450,E_ref_col=1200,dis_const=29.3)
     raw_matrix,file_title=TIF_Correction.input_tif_data(img_path)
     bg_matrix,bg_title=TIF_Correction.input_bg_data(bg_file)
+    save_path=TIF_Correction.save_path
+    print(f'save to path {save_path}')
     # process tif image
-    p_col=1220
+    p_col=620
     half_n=100
     ROI_matrix=TIF_Correction.get_ROI_data(p_col=p_col,cut_lines=half_n)
     clearBG_matrix,median_matrix=TIF_Correction.tif_preprocess(ROI_matrix,False,False,True)
@@ -633,7 +688,7 @@ if __name__=="__main__":
     corr_peakdata=TIF_Correction.get_correct_peak_data(raw_matrix,fit_para=fit_paras,p_col=min_p_col)
     ROI_correct_data=TIF_Correction.get_correct_peak_data(ROI_matrix,fit_para=fit_paras,p_col=min_p_col)
     pd_spectrum_data=TIF_Correction.get_spectral_info(corr_peakdata,bg_data=bg_matrix,E_in=443.5,E_ref=450,p_col=min_p_col)
-
+    plot_GaussFit_results(min_result[0],save_folder=save_path,title=f'{file_title}_slice_n-{min_slice_n}_p_col-{min_p_col}')
     print(f'full autocorrelation process cost {time.time()-start_time:.4f}s')
     # display corrected and spectral results
     TIF_Correction.plot_corrected_data(raw_matrix,ROI_matrix,corr_peakdata,ROI_correct_data,pd_spectrum_data,file_title)
