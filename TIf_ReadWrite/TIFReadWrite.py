@@ -11,7 +11,6 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 import cv2
 from tifffile import TiffFile,tifffile
-import exifread
 
 def Read_Tif_XMP(tif_file:str):
     """read tif image by tifffile
