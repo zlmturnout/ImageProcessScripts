@@ -656,8 +656,8 @@ if __name__=="__main__":
     root.destroy()
     start_time=time.time()
     # bakground file
-    bg_file=os.path.abspath("./CCD_TIF_Pipeline//tif_imgs//curve_line10_noise_background.tif")
-    print(bg_file)
+    #bg_file=os.path.abspath("./CCD_TIF_Pipeline//tif_imgs//curve_line10_noise_background.tif")
+    #print(bg_file)
     # save corrected_list data
     save_folder,file=os.path.split(img_path)
     corr_folder=createPath(os.path.join(save_folder,'CorrectedResults'))
@@ -667,7 +667,7 @@ if __name__=="__main__":
     # process tif image
     TIF_Correction=TifAutoCorrelation(E_ref=450,E_ref_col=1200,dis_const=29.3)
     raw_matrix,file_title=TIF_Correction.input_tif_data(img_path)
-    bg_matrix,bg_title=TIF_Correction.input_bg_data(bg_file)
+    #bg_matrix,bg_title=TIF_Correction.input_bg_data(bg_file)
     save_path=TIF_Correction.save_path
     print(f'save to path {save_path}')
     # process tif image
