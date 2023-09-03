@@ -30,5 +30,5 @@ def upscale_png(img_file:str,height:int=2160,width:int=3840,fit_on:int=0,scale_s
     cv2.imwrite(new_imgfile,new_img)
     print(f'image process finished in {time.monotonic()-start_time:.2f}s')
 if __name__ == "__main__":
-    img= r'./img/00187-3869624274.png'
+    img= r'./img/00195-3869624274.png'
     upscale_png(img,height=2160,width=3840,fit_on=1,scale_str='h2160')

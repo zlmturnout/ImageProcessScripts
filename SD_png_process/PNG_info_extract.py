@@ -37,7 +37,7 @@ def text_to_dict(text:str):
 
 if __name__=="__main__":
     #filename = r'./img/00129-302883656.png'
-    filename=r'./img/00171-3869624274_4K.png'
+    filename=r'./img/00037.png'
     # im = Image.open(filename)
     # im.load()  # Needed only for .png EXIF data (see citation above)
     png_info_dict=get_prompt_png(filename)
