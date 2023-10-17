@@ -16,6 +16,8 @@ UI/__pycache__
 
 # my ignore file
 *.log
+*.txt
+*.mp4
 html/
 save_data
 UI/*.jpg
