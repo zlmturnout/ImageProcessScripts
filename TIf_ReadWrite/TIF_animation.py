@@ -116,15 +116,16 @@ def update_tif_fig(frame,tif_param_dict:dict,ax:plt.Axes):
 if __name__=='__main__':
     fig, ax = plt.subplots()
     #Tif_folder=os.path.abspath(r'Tif_ReadWrite/STO-2theta')
-    Tif_folder=os.path.abspath(r'Tif_ReadWrite/STO_Energy_0d5eV')
+    Tif_folder=os.path.abspath(r'L:\REXS_CCD1024\2023-10-16\STO-1795-1805eV')
     #tif_file_list
-    tif_para_dict=construct_tif_params(Tif_folder,key_name="energy(eV)")
+    tif_para_dict=construct_tif_params(Tif_folder,key_name="energy(eV)") #energy(eV) DET_2theta
     print(tif_para_dict)
     # single plot
     # tif_0=os.path.join(Tif_folder,tif_para_dict["file_list"][0])
     # tif_para_0={tif_para_dict['key_name']:tif_para_dict['value_list'][0]}
     # plot_tif_img_with_params(tif_0,tif_para_0,ax)
     tif_num=len(tif_para_dict["file_list"])
+    print(f' total frame:{tif_num}')
     # animation
     
     # ani = FuncAnimation(fig, partial(update_tif_fig,tif_param_dict=tif_para_dict,ax=ax), frames=range(tif_num),
@@ -132,7 +133,7 @@ if __name__=='__main__':
     # plt.show()
     # save tp mp4
     moviewriter = FFMpegWriter()
-    mp4_file=os.path.join(Tif_folder,"tif_change.mp4")
+    mp4_file=os.path.join(Tif_folder,"tif_change_200dpi.mp4")
     with moviewriter.saving(fig, mp4_file, dpi=200):
         for frame in range(tif_num):
             update_tif_fig(frame,tif_param_dict=tif_para_dict,ax=ax)
