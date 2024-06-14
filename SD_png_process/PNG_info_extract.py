@@ -3,7 +3,7 @@ import os,sys,time,re,json
 
 def get_prompt_png(png_file:str):
     if os.path.isfile(png_file) and png_file.endswith('png'):
-        im = Image.open(filename)
+        im = Image.open(png_file)
         im.load()  # Needed only for .png EXIF data (see citation above)
         parameters=im.info.get('parameters',None)
         png_info_dict={"filename":png_file,"input_prompt":None,"negative_prompt":None}
@@ -13,8 +13,7 @@ def get_prompt_png(png_file:str):
             png_info_dict["input_prompt"]=input_paras[0]
             png_info_dict["negative_prompt"]=re.match(r'Negative prompt[:](.*)',input_paras[1]).group(1)
             png_para_dict=text_to_dict(input_paras[-1])
-        if not png_para_dict:
-            png_info_dict.update(png_para_dict)
+        png_info_dict.update(png_para_dict)
         png_info_dict["postprocessing"]=im.info.get('postprocessing',None)
         png_info_dict["extras"]=im.info.get('extras',None)
         png_info_dict["width"],png_info_dict["height"]=im.width,im.height
@@ -37,7 +36,7 @@ def text_to_dict(text:str):
 
 def comfy_ui_png_info(png_file:str):
     if os.path.isfile(png_file) and png_file.endswith('png'):
-        im = Image.open(filename)
+        im = Image.open(png_file)
         im.load()  # Needed only for .png EXIF data (see citation above)
         prompt_json=json.loads(im.info.get('prompt',None))
         workflow_json=json.loads(im.info.get('workflow',None))
@@ -47,14 +46,14 @@ def comfy_ui_png_info(png_file:str):
             neg_prompt=prompt_json['8']['inputs']['negative']
             model=prompt_json['8']['inputs']['base_ckpt_name']
         elif '4' in prompt_json.keys():
-            pos_prompt=prompt_json['8']['inputs']['positive']
-            neg_prompt=prompt_json['8']['inputs']['negative']
-            model=prompt_json['8']['inputs']['base_ckpt_name']
+            pos_prompt=prompt_json['4']['inputs']['positive']
+            neg_prompt=prompt_json['4']['inputs']['negative']
+            model=prompt_json['4']['inputs']['base_ckpt_name']
         return model,pos_prompt,neg_prompt
     
 if __name__=="__main__":
     #filename = r'./img/00129-302883656.png'
-    filename=r'./img/SDXL_2x_00531_.png'
+    filename=r'F:\Coding\PythonProjects\ImageProcessScripts\img\00189-145572448.png'
     filename2=r'./img/SDXL__00001_.png'
     
     im = Image.open(filename2)
@@ -65,7 +64,7 @@ if __name__=="__main__":
     # pos_prompt=prompt_json['8']['inputs']['positive']
     # neg_prompt=prompt_json['8']['inputs']['negative']
     # model=prompt_json['8']['inputs']['base_ckpt_name']
-    model,pos_prompt,neg_prompt=comfy_ui_png_info(filename)
+    model,pos_prompt,neg_prompt=comfy_ui_png_info(filename2)
     print(f'model:\n{model}\npos_prompt:\n{pos_prompt}\nneg_prompt:\n{neg_prompt}')
     # for SD-web-ui
     parameters=im.info.get('parameters',None)
