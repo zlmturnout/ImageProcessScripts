@@ -17,7 +17,10 @@ def get_prompt_png(png_file:str):
         png_info_dict["postprocessing"]=im.info.get('postprocessing',None)
         png_info_dict["extras"]=im.info.get('extras',None)
         png_info_dict["width"],png_info_dict["height"]=im.width,im.height
-        
+        # save to txt file
+        save_folder=os.path.dirname(png_file)
+        txt_name=os.path.splitext(os.path.basename(png_file))[0]+'.txt'
+        dict_to_text(png_info_dict,save_folder,txt_name)
     return png_info_dict
 
 def text_to_dict(text:str):
@@ -33,6 +36,20 @@ def text_to_dict(text:str):
         vars=item.split(': ')[-1]
         text_info_dict[key]=vars
     return text_info_dict
+
+def dict_to_text(data_dict: dict, file_path: str, file_name: str):
+    """
+    Transform dict form data to text form and save to file
+    :param data_dict:
+    :param file_path:
+    :param file_name:
+    :return:
+    """
+    txt_file=os.path.join(file_path,file_name)
+    with open(txt_file, 'w') as f:
+        for k, v in data_dict.items():
+            f.write(k + ': ' + str(v) + '\n')
+    return txt_file
 
 def comfy_ui_png_info(png_file:str):
     if os.path.isfile(png_file) and png_file.endswith('png'):
@@ -53,7 +70,7 @@ def comfy_ui_png_info(png_file:str):
     
 if __name__=="__main__":
     #filename = r'./img/00129-302883656.png'
-    filename=r'F:\Coding\PythonProjects\ImageProcessScripts\img\00189-145572448.png'
+    filename=r'F:\Coding\PythonProjects\ImageProcessScripts\img\00002-3558247218.png'
     filename2=r'./img/SDXL__00001_.png'
     
     im = Image.open(filename2)
