@@ -132,6 +132,26 @@ def ffmpeg_images_to_gif(image_folder, output_gif, fps=10):
     print(f"GIF动画已生成:{output_gif}")
 
 
+def ffmpeg_cut_mp4(input_file, output_file, start_time, duration):
+    """
+    使用FFmpeg从源媒体中剪切视频。
+
+    参数:
+    input_file (str): 输入视频文件的路径。
+    output_file (str): 输出视频文件的路径。
+    start_time (str): 剪切开始时间，格式为 "HH:MM:SS"。
+    duration (str): 剪切持续时间，格式为 "HH:MM:SS"。
+    """
+    command = [
+        'ffmpeg',
+        '-i', input_file,
+        '-ss', start_time,
+        '-t', duration,
+        '-c', 'copy',
+        output_file
+    ]
+    subprocess.run(command, check=True)
+
 
 # 示例用法
 if __name__ == '__main__':

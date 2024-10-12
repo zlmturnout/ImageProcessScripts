@@ -209,7 +209,7 @@ class myTimer:
     def __call__(self, *args, **kwds):
         start_time = time.time()
         result=self.func(*args, **kwds)
-        print(f'Function {self.func.__name__} cost: {time.time()-start_time:.4f}s\n')
+        print(f'Function {self.func.__name__:*^20} cost: {time.time()-start_time:.4f}s\n')
         return result
     
 # find first 100 prime num
@@ -299,7 +299,7 @@ if __name__ == "__main__":
     # logger=my_logger()
     # prime_list = get_prime(2000)
     # print(len(prime_list))
-    n_prime = find_n_prime(20000)
+    n_prime= find_n_prime(20000)
     print(len(n_prime))
     # print(f'last prime num: {n_prime[-1]}')
     # list_to_csv(n_prime,os.getcwd(),'prime20000')
