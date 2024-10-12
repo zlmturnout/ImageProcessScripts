@@ -16,7 +16,7 @@ from tifffile import TiffFile,tifffile
 
 
 
-def get_I_range(tif_data:np.array([])):
+def get_I_range(tif_data:np.array):
     """get the range of pixel intensity of the image
 
     Args:

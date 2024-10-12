@@ -35,7 +35,7 @@ def detectorclean(exp, noise1, noise2):
     detectorcleanout = exp
     return detectorcleanout
 
-def median_filter(matrix:np.array([]),filter_N:int=3):
+def median_filter(matrix:np.array,filter_N:int=3):
     median_matrix=cv2.medianBlur(matrix, filter_N)
     return median_matrix
 
