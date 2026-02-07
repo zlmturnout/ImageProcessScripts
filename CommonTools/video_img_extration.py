@@ -1,6 +1,16 @@
 import subprocess
 import os
 
+def createPath(file_path):
+    """
+    create a given path if not exist and return it
+    :param file_path:
+    :return: file_path
+    """
+    if os.path.exists(file_path) is False:
+        os.makedirs(file_path)
+    return file_path
+
 def ffmpeg_extract_frames(video_path, output_folder):
     # 确保输出文件夹存在
     if not os.path.exists(output_folder):
@@ -27,7 +37,7 @@ def ffmpeg_tif_to_png(tif_folder, output_folder):
     :param output_folder: 输出文件夹路径
     """
     # 获取TIFF图片文件夹中的所有图片文件
-    tif_files = [os.path.join(tif_folder, f) for f in os.listdir(tif_folder) if f.endswith('.tif')]
+    tif_files = [os.path.join(tif_folder, f) for f in os.listdir(tif_folder) if f.endswith('.tif') or f.endswith('.tiff')]
     
     # 检查是否有TIFF图片文件
     if not tif_files:
@@ -152,22 +162,45 @@ def ffmpeg_cut_mp4(input_file, output_file, start_time, duration):
     ]
     subprocess.run(command, check=True)
 
+def ffmpeg_combine_mp4_audio(input_file, audio_file, output_file):
+    """
+    使用FFmpeg将视频文件和音频文件合并。
+
+    参数:
+    input_file (str): 输入视频文件的路径。
+    audio_file (str): 输入音频文件的路径。
+    output_file (str): 输出视频文件的路径。
+    """
+    command = [
+        'ffmpeg',
+        '-i', input_file, 
+        '-i', audio_file,
+        '-c:v', 'copy',
+        '-c:a', 'aac',
+        '-strict', 'experimental',
+        output_file
+    ]
+    subprocess.run(command, check=True)
 
 # 示例用法
 if __name__ == '__main__':
-    video_path = os.path.abspath(r'J:\Films\201210_0701_1080P_4000K_378043122.mp4')
-    output_folder = os.path.join(os.path.dirname(video_path), 'frames')
-    #create output_folder
-    #extract_frames(video_path, output_folder)
-    print('视频帧提取完成!')
+    # video_path = os.path.abspath(r'J:\Films\201210_0701_1080P_4000K_378043122.mp4')
+    # output_folder = os.path.join(os.path.dirname(video_path), 'frames')
+    # #create output_folder
+    # #extract_frames(video_path, output_folder)
+    # print('视频帧提取完成!')
     
-    tif_folder= os.path.abspath(r'X:\DataAnalysis2024-06\bubble_1d8H2')
-    png_folder = os.path.join(os.path.dirname(tif_folder), os.path.basename(tif_folder)+'_png')
-    ffmpeg_tif_to_png( tif_folder, png_folder)
-    # png to video
-    #image_folder = os.path.abspath(r'I:\Coding\GitReposity\ImageProcessScripts\img\bubble_1d8H2_png')
-    output_video=os.path.join(png_folder , 'output_video.mp4')
-    ffmpeg_images_to_video(png_folder, output_video)
-    # png to gif
-    output_gif=os.path.join(png_folder , 'output_gif.gif')
-    ffmpeg_images_to_gif(png_folder, output_gif)
+    # tif_folder= os.path.abspath(r'T:\FastXimages\AlO_bubble_growth')
+    # png_folder = createPath(os.path.join(os.path.dirname(tif_folder), os.path.basename(tif_folder)+'_png'))
+    # ffmpeg_tif_to_png( tif_folder, png_folder)
+    # # png to video
+    # #image_folder = os.path.abspath(r'I:\Coding\GitReposity\ImageProcessScripts\img\bubble_1d8H2_png')
+    # output_video=os.path.join(png_folder , 'output_video.mp4')
+    # ffmpeg_images_to_video(png_folder, output_video)
+    # # png to gif
+    # output_gif=os.path.join(png_folder , 'output_gif.gif')
+    # ffmpeg_images_to_gif(png_folder, output_gif)
+    video=r'R:\CODEs\chuntingxue\videoplayback.mp4'
+    audio=r'R:\CODEs\chuntingxue\videoplayback.weba'
+    output_video=os.path.join(os.path.dirname(video), 'output_video.mp4')
+    ffmpeg_combine_mp4_audio(video, audio, output_video)

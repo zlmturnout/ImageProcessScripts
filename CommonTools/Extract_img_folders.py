@@ -84,8 +84,8 @@ def extract_pics(src_path,dst_path,filetype=None):
                 
 if __name__ == "__main__":
     #download_path = r'F:\BeautifulPictures'
-    download_path=r'L:\Entertain\PICS\BeautifulPictures2\NvShen\林文文'
-    save_path = r'L:\Entertain\PICS\Testwallpapaers\林文文'
+    download_path=r'N:\XImgs\tuli\niannian'
+    save_path = r'N:\XImgs\niannian'
     save_path = create_path(save_path)
     #pic_list=extract_pic_folder(download_path,save_path,[])
     #print(f'get all pics:{pic_list} with number {len(pic_list)}')

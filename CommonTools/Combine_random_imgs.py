@@ -98,6 +98,6 @@ def combine_imgs_infolder(pic_folder,save_path:str,height:int=1800,all_num:int=3
 
 if __name__=="__main__":
     pic_folder=r'E:\Open_pics\FlightAttendance'
-    pic_folder=r'M:\XImgs\新人'
+    pic_folder=r'E:\Open_pics\方子萱'
     save_path=r'E:\Open_pics\CombinedIMGs'
     combine_imgs_infolder(pic_folder,save_path,all_num=30)
