@@ -1,7 +1,6 @@
 # coding: utf-8
 import os, sys,time,datetime
 import traceback
-import yaml,re
 import numpy as np
 import matplotlib.pyplot as plt
 import tkinter
@@ -171,6 +170,7 @@ def ScipyGaussianFit(x, y, center=None, info:str='GaussFit', fit_range_percent:f
         Fit_results['wid']=(wid_fit,wid_err)
         Fit_results['cen']=(cen_fit,cen_err)
         Fit_results['info']=info
+        
         if fit_success and wid_err is not None:
             FWHM=wid_fit*2*np.sqrt(np.log(4))
             FWHM_err=wid_err*2*np.sqrt(np.log(4))
@@ -189,6 +189,7 @@ def ScipyGaussianFit(x, y, center=None, info:str='GaussFit', fit_range_percent:f
         Fit_results['status']=fit_success
         #print(f'get FWHM={FWHM:.4f} with error +/-{FWHM_err}')
         return Fit_results, FWHM
+
 
 def plot_GaussFit_results(Fit_results:dict,save_folder:str='./',title:str='Gaussfit with FWHM'):
     """plot the Gauss fit line and FWHM results
@@ -230,12 +231,6 @@ def peakline_curve_fit(x_list:np.array,y_list:np.array):
             #print(f'\n with pcov={pcov}')
         return popt,fit_status
 
-from tifffile import tifffile,TiffFile
-def Read_ccd_Tif_metadata(tif_file:str):
-    meta_dict={}
-    if meta_data:=TiffFile(tif_file).shaped_metadata:
-        meta_dict=meta_data[0]
-    return meta_dict
 
     
 class TifAutoCorrelation(object):
@@ -244,9 +239,6 @@ class TifAutoCorrelation(object):
     2. image preprocess == clear background noise  and median filter
     3. AutoCorrelationProcess == slices->peak center->curve-fit->shif each rows->final peak-line
     4. obtain and save corrected image == peak line normalized to v-line
-       (M7 optimization: when only the summed spectrum is needed, use
-        get_corrected_intensity() which groups rows by identical shift and never
-        materialises the MxN corrected image - bit-identical result, ~8x faster)
     Needed input: tif image with shape=(width,height) like (2052,2048) with 16bit data
     Args:
         object (_type_): _description_
@@ -280,10 +272,10 @@ class TifAutoCorrelation(object):
             tif_path,file=os.path.split(tif_file)
             self.file_title,extension=os.path.splitext(file)
             self.save_path=createPath(os.path.join(tif_path,f"ACorr-{self.file_title}"))
-            self.fitData_folder=createPath(os.path.join(self.save_path,'GaussFitReports'))
+            self.fitData_folder=createPath(os.path.join(self.save_path,'CorrectedResults'))
             img = Image.open(tif_file)
             self.raw_tif_data = np.array(img,dtype=np.float32)
-            print(f'\nread tif img:{self.file_title}\nshape of the read img={np.shape(self.raw_tif_data)}')
+            print(f'shape of the read img={np.shape(self.raw_tif_data)}')
         return self.raw_tif_data,self.file_title
     
     def input_bg_data(self,bg_file:str):
@@ -413,32 +405,6 @@ class TifAutoCorrelation(object):
             n (int, optional): how many position Defaults to 0.positive is shift left else right
         """
         return np.append(array[n:],array[:n])
-
-    # ------------------------------------------------------------------
-    # M7: run-length grouped shift  (grouped-by-contiguous-segment kernel)
-    # s_i comes from a 2nd order curve, so neighbouring rows normally share the
-    # same integer shift.  Instead of rolling every row one by one we split the
-    # shift field into runs of identical value, sum each run with a slice view
-    # (no copy) and roll the partial sum once.
-    # measured on 2052x2048: ~2.0 ms/image vs ~17 ms for the row-by-row loop,
-    # and the result is bit-identical (integer counting data).
-    # ------------------------------------------------------------------
-    @staticmethod
-    def shift_segments(s:np.array)->list:
-        """split the shift field into runs: [(shift_value, row_start, row_stop), ...]"""
-        s=np.asarray(s,dtype=np.int64)
-        if s.size==0:
-            return []
-        edges=np.r_[0,np.flatnonzero(np.diff(s)!=0)+1,s.size]
-        return [(int(s[a]),int(a),int(b)) for a,b in zip(edges[:-1],edges[1:])]
-
-    @staticmethod
-    def get_shift_field(row:int,fit_para:list,p_col:int)->np.array:
-        """vectorised s_i = round(a+b*i+c*i^2 - p_col) for i=0..row-1
-        (same value as calling cal_shift_pixel() row by row)."""
-        i=np.arange(row,dtype=np.float64)
-        [a,b,c]=fit_para
-        return np.round(peak_curve_func(i,a,b,c)-p_col).astype(np.int64)
     
     @staticmethod
     def find_peak_center(slice_data:np.array)->float:
@@ -508,9 +474,12 @@ class TifAutoCorrelation(object):
         if fit_status:
             # curve fit success 
             a,b,c=pcov
+            result = np.zeros(column)
             #self.curve_fit_paras=[a,b,c]
-            # M7: identical to the old row loop  result += shift_arrray(row_i, s_i)
-            result=self.get_corrected_intensity(peak_data,self.curve_fit_paras,p_col)
+            for index in range(row):
+                temp =peak_data[index, :]
+                shift_n=self.cal_shift_pixel(index,p_col,self.curve_fit_paras)
+                result += self.shift_arrray(temp,shift_n)
             # get the fianl FWHM Gaussfit results
             Fit_results,FWHM=ScipyGaussianFit(x_list,result,None,info="Correlation-fit")
             if FWHM==-1: 
@@ -610,81 +579,26 @@ class TifAutoCorrelation(object):
         self.correct_peak_data=corr_peakdata
         return corr_peakdata
 
-    def get_corrected_intensity(self,peak_data:np.array,fit_para:list,p_col:int=935,
-                                max_segments:int=256,seg_cache:dict=None):
-        """M7: same value as get_correct_peak_data(...).sum(axis=0) but WITHOUT
-        materialising the MxN corrected image.
-
-        Only the summed spectrum is produced, so the row-by-row loop can be
-        replaced by run-length grouping: rows sharing the same shift are summed
-        first (contiguous slice view, no data copy) and the partial sum is
-        rolled once.  ~8x faster than get_correct_peak_data + sum.
-
-        Args:
-            peak_data (np.array): raw (or preprocessed) image, shape (row, column)
-            fit_para (list): [a,b,c] of y=a+b*x+c*x^2
-            p_col (int): peak centre column used as reference
-            max_segments (int): if the shift field is more fragmented than this,
-                fall back to get_correct_peak_data (keeps the result identical)
-            seg_cache (dict, optional): reuse the shift field across images of one
-                map/scan (the shift field does not depend on the image)
-        Returns:
-            np.array: intensity spectrum, shape (column,)
-        """
-        row,column=peak_data.shape
-        key=(row,int(p_col),tuple(np.round(np.asarray(fit_para,dtype=np.float64),12)))
-        s=None
-        if seg_cache is not None:
-            s=seg_cache.get(key)
-        if s is None:
-            s=self.get_shift_field(row,fit_para,p_col)
-            if seg_cache is not None:
-                seg_cache[key]=s
-        segs=self.shift_segments(s)
-        if len(segs)>max_segments:                      # too fragmented -> original path
-            return self.get_correct_peak_data(peak_data,fit_para,p_col).sum(axis=0)
-        result=np.zeros(column,dtype=np.float64)
-        for v,a,b in segs:
-            part=peak_data[a:b].sum(axis=0)             # contiguous slice view, no copy
-            result += part if v%column==0 else np.roll(part,-v)
-        return result
-
-    def get_spectral_info(self,correct_data:np.array=np.array([]),bg_data:np.array=np.array([]),E_in:float=443.5,E_ref:float=450,p_col:int=935,
-                            dis_const:float=29.3,filename:str='Manualfit_img',
-                            intensity:np.array=np.array([]),n_rows:int=0,bg_reference:np.array=np.array([]),):
+    def get_spectral_info(self,correct_data:np.array,bg_data:np.array,E_in:float=443.5,E_ref:float=450,p_col:int=935,
+                            dis_const:float=29.3,filename:str='correctedPeak_img',):
         """get the spectral info based on the corrected img data and normalized spectral data
 
         Args:
-            correct_data (np.array): _description_  (可以不给：改用 intensity + n_rows + bg_reference)
+            correct_data (np.array): _description_
             fit_para (list): curve fit parameter
             E_in (float, optional): Energy in Defaults to 443.5.
             E_ref (float, optional): reference Energy Defaults to 450.
             p_col (int, optional): peak center to reference Energy Defaults to 935.
             dis_const (float, optional): dispersion constant. Defaults to 29.3.
-            filename (str, optional): _description_. Defaults to 'Manualfit_img'.
+            filename (str, optional): _description_. Defaults to 'correctedPeak_img'.
             Xpixel_bg_i (int, optional): backgroud pixel index for Normalization Defaults to 500.
-            intensity (np.array, optional): already computed spectrum (from
-                get_corrected_intensity) - avoids building the corrected image.
-            n_rows (int, optional): number of rows that were summed (= image row count).
-            bg_reference (np.array, optional): image used for the background block.
-                A circular shift keeps every row sum unchanged, so the raw image
-                gives exactly the same average as the corrected one.
         """
-        if intensity.size!=0:
-            # spectrum computed without materialising the corrected image
-            sum_result=np.asarray(intensity,dtype=np.float64)
-            column=sum_result.size
-            row=int(n_rows)
-            bg_src=bg_reference
-        else:
-            row,column=correct_data.shape
-            sum_result=np.sum(correct_data,axis=0) # sum spectral
-            bg_src=correct_data
-
+        row,column=correct_data.shape
+        
         half_n=round(column/2)
         x_list=np.array([i for i in range(column)])-half_n+p_col
         E_out_list=-(np.array([i for i in range(column)])-p_col)*dis_const/1000+E_ref
-        E_rel_list=E_out_list-E_in
+        sum_result=np.sum(correct_data,axis=0) # sum spectral
         # energy in list
         E_in_list=np.array(E_in for i in range(column))
         
@@ -696,26 +610,19 @@ class TifAutoCorrelation(object):
         if bg_data.size!=0 and bg_data.shape[0]==row:
             average_I=np.average(bg_data[half_row-bg_lines:half_row+bg_lines],axis=0)
         else:
-            if bg_src.size==0:
-                raise ValueError("get_spectral_info: need correct_data or bg_reference for the background level")
-            average_I=np.average(bg_src[half_row-bg_lines:half_row+bg_lines])
+            average_I=np.average(correct_data[half_row-bg_lines:half_row+bg_lines])
         # normalize intensity
         #average_I=np.average(sum_result[bg_index-bg_lines:bg_index+bg_lines])
         NormalizeDi_I=sum_result/average_I/row
         NormalizeSub_I=sum_result-average_I*row
         NormalizeLn_I=np.log(sum_result/average_I/row)
         # save the spectral data
-        spectra_dict={"EnergyIn(eV)":E_in_list,"EnergyOut(eV)":E_out_list,"EnergyRel(eV)":E_rel_list,"Intensity":sum_result,"Index(pixel)":x_list,"Normalized_Di_Intensity":NormalizeDi_I,
+        spectra_dict={"EnergyIn(eV)":E_in_list,"EnergyOut(eV)":E_out_list,"Intensity":sum_result,"Index(pixel)":x_list,"Normalized_Di_Intensity":NormalizeDi_I,
                   "Normalized_Sub_Intensity":NormalizeSub_I,"Normalized_Ln_Intensity":NormalizeLn_I}
         pd_spectrum_data=pd.DataFrame(spectra_dict)
         save_pd_data(pd_spectrum_data,self.save_path,filename=f'Corrected-FullSpectrum_E_in_{E_in}_{filename}')
-        # for Full spectral-2D mapping
-        upter_path,_=os.path.split(self.save_path)
-        Mapping2D_path=createPath(os.path.join(upter_path,'FullSpectrum'))
-        save_pd_data(pd_spectrum_data,Mapping2D_path,filename=f'Corrected-FullSpectrum_E_in_{E_in}_{filename}')
-
         # save corrected img
-        #save_tif_data(correct_data,self.save_path,f'CorrectedPeak_{filename}')
+        save_tif_data(correct_data,self.save_path,f'CorrectedPeak_{filename}')
         return pd_spectrum_data
 
     def plot_corrected_data(self,raw_data:np.array,ROI_data:np.array,corr_peakdata:np.array,
@@ -745,7 +652,7 @@ class TifAutoCorrelation(object):
         im=corr_ax.imshow(corr_peakdata,cmap=cm.rainbow,vmin=vmin,vmax=vmax)
         corr_ax.tick_params(top=True, labeltop=True, bottom=False, labelbottom=False)
         secax = corr_ax.secondary_xaxis('bottom', functions=(self.colIndex_To_Energy, self.Energy_To_colIndex))
-        secax.set_xlabel('Energy(eV)')
+        secax.set_xlabel('Energy/eV')
         secax.xaxis.set_major_locator(MaxNLocator(5)) 
         fig.colorbar(im,ax=corr_ax,location='right', fraction=0.1)
         corr_ax.set_title("Autocorrelation corrected img")
@@ -778,11 +685,11 @@ class TifAutoCorrelation(object):
                               markeredgecolor='orchid', linestyle='-', color='c', label='corrected peak spectra')
         Nor_ax2.set_xlabel('Energy(eV)',fontsize=12, color='#20B2AA')
         Nor_ax2.set_ylabel('Sub_intensity',fontsize=12, color='#20B2AA')
-        Nor_ax2.set_title(f"Normalized_Sub_Corrected_Spectral_{filename}",loc='center')
+        Nor_ax2.set_title(f"Normalize_Sub_Corrected Spectral_{filename}",loc='center')
         # save figure
         save_fig=os.path.join(self.save_path,f'Autocorrelated_img_{filename}.pdf')
         plt.savefig(save_fig)
-    
+
     def plot_spectral_data(self,raw_data:np.array,corr_peakdata:np.array,pd_spectral_data:pd.DataFrame,filename:str='Autocorrelated_E_out'):
         """plot the corrected any tif data
 
@@ -835,74 +742,6 @@ class TifAutoCorrelation(object):
         save_fig=os.path.join(self.save_path,f'Autocorrelated_img_{filename}.pdf')
         plt.savefig(save_fig)
 
-    def correct_tif_folder(self,tif_folder,edge_fit_para:dict,use_median_filter:bool=True):
-        """correct all tif in one folder
-            tif filename should start like 01_E540eV.tif 
-            Note: 01 will refer to the incident energy=yaml_data["EnergyList"][0] 
-        Args:
-            tif_folder (_type_): folder wit all acquired CCD img inside 
-            yaml_file (_type_): Yaml file for input parameter
-        """
-        
-        status='unknown'
-        meta_dict={}   # avoid UnboundLocalError when no tif matched the energy pattern
-        Mapping2D_path=createPath(os.path.join(tif_folder,'Mapping2D_folder'))
-        # get all tif image
-        time_t0=time.time()
-        all_tif_imgs={}
-        for fi in os.listdir(tif_folder):
-            fi_d=os.path.join(tif_folder,fi)
-            if fi_d.endswith('.tif'):
-                #E_str=fi.split('_')[1]
-                if E_s:=re.search(r'(\d+\.\d+|\d+)[e][V]',fi):
-                    all_tif_imgs[E_s.group(1)]=fi_d
-        # read yaml data
-        try:
-            if 'Fit_para' in edge_fit_para.keys() :
-                fit_para=edge_fit_para['Fit_para']
-                dis_c=edge_fit_para['dis_c']
-                E_ref=edge_fit_para['Energy_ref']
-                E_p_col_ref=edge_fit_para['p_col_ref']
-                #EnergyList=edge_fit_para['EnergyList']
-            else:
-                # edge_fit_para should be the inner block, e.g. yaml_data['O_K']
-                raise KeyError("edge_fit_para has no 'Fit_para' key - pass the inner edge block "
-                               "(e.g. yaml_data['O_K']), got keys=%s" % (list(edge_fit_para.keys()),))
-        except Exception as e:
-                print(traceback.format_exc())
-                status='error'
-        else:
-            num_tif=len(all_tif_imgs)
-            # process all tif image
-            if num_tif==0:
-                status='No_Matched_img'
-            else:
-                # read first tif and acquire the sample name
-                first_key=list(all_tif_imgs.keys())[0]
-                meta_dict=Read_ccd_Tif_metadata(all_tif_imgs[first_key])
-                print(f'samplename:{meta_dict["samplename"]}')
-                seg_cache={} # M7: the shift field is identical for every image of one scan
-                for E_s,tif_file in all_tif_imgs.items():
-                    #num=int(num_s.split("_")[0])-1
-                    E_in=round(float(E_s.split('E')[-1]),2)
-                    raw_data,tif_title=self.input_tif_data(tif_file)
-                    # add cv median filter
-                    median_data=self.median_filter(raw_data,3) if use_median_filter else raw_data
-                    # M7: this batch path only needs the summed spectrum (the corrected image
-                    # is not saved here and plot_spectral_data is switched off), so compute the
-                    # intensity directly and skip building the MxN corrected image.
-                    corr_intensity=self.get_corrected_intensity(median_data,fit_para,E_p_col_ref,
-                                                                seg_cache=seg_cache)
-                    pd_corr_data=self.get_spectral_info(E_in=E_in,E_ref=E_ref,bg_data=np.array([]),
-                                   p_col=E_p_col_ref,dis_const=dis_c,filename=tif_title,
-                                   intensity=corr_intensity,n_rows=median_data.shape[0],
-                                   bg_reference=median_data)
-                    # save 2D mapping spectral data
-                    save_pd_data(pd_corr_data,Mapping2D_path,filename=f'Corrected-FullSpectrum_E_in_{E_in}_{tif_title}')
-                    #self.plot_spectral_data(raw_data,correct_img_data,pd_corr_data,tif_title)
-                status='OK'
-                print(f'process {num_tif} image cost {time.time()-time_t0:.4f}s\nAverage cost on each tif image:{(time.time()-time_t0)/num_tif:.4f}s')
-        return status,meta_dict,Mapping2D_path
 
 if __name__=="__main__":
     root = Tk()
@@ -924,9 +763,10 @@ if __name__=="__main__":
     # process tif image
     TIF_Correction=TifAutoCorrelation(E_ref=450,E_ref_col=1200,dis_const=29.3)
     raw_matrix,file_title=TIF_Correction.input_tif_data(img_path)
-    save_path=TIF_Correction.save_path
-    bg_matrix=np.array([])
+    bg_matrix=np.zeros_like(raw_matrix)
     #bg_matrix,bg_title=TIF_Correction.input_bg_data(bg_file)
+    save_path=TIF_Correction.save_path
+    print(f'save to path {save_path}')
     # process tif image
     p_col=1300
     half_n=700

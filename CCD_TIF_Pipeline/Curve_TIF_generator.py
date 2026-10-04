@@ -37,24 +37,23 @@ def generate_Linetif(width:int,tif_shape:tuple=(2048,2052),add_noise=True):
     #print(img_matrix)
     return img_matrix.T
 
-def generate_2st_curve_tif(width:int,y0:float,y1:float,y2:float,tif_shape:tuple=(2048,2052)
-                           ,add_noise=True,linear_noise=True,liner_aspect:float=0.05,only_bg=False):
+def generate_2st_curve_tif(width:int,paras:tuple=(1200,1.72e-02,8.77e-08),tif_shape:tuple=(2048,2052)
+                           ,add_noise=True,linear_noise=True,liner_aspect:float=0.05,only_bg=False,base_I=1200):
     """generate a np array containing secondary curve line with width of several pixels 
     
     line_expression:col-X=y0+y1*Y+y2*Y**2
 
     Args:
         width (int): _description_
-        x0 (float): _description_
-        x1 (float): _description_
-        x2 (float): _description_
+        paras (tuple, optional): _description_. Defaults to (1200,1.72e-02,8.77e-08).
         tif_shape (tuple, optional): _description_. Defaults to (2048,2052).
         add_noise (bool, optional): _description_. Defaults to True.
-
+        liner_aspect (float, optional): noise Defaults to 0.05.
     Returns:
         _type_: _description_
     """
     img_matrix=np.zeros(shape=tif_shape)
+    y0,y1,y2=paras
     w=0.5*width/sqrt(log(4)) # gaussian 2w=FWHM/sqrt(ln4)
     for row in range(tif_shape[1]): # row is height=2052
         for col in range(tif_shape[0]): # column is width=2048
@@ -70,7 +69,7 @@ def generate_2st_curve_tif(width:int,y0:float,y1:float,y2:float,tif_shape:tuple=
                 liner_a=liner_aspect
             if only_bg:
                 counts=0
-            img_matrix[col,row]=float(1300+counts*gaussian(dist,1,0,w)+liner_a*col+15+noise_num)
+            img_matrix[col,row]=float(base_I+counts*gaussian(dist,1,0,w)+liner_a*col+15+noise_num)
             #img_matrix[col,row]=float(1300+1000*gaussian(dist,1,0,w)+0.000*col+15)
     return img_matrix.T
 
@@ -81,7 +80,7 @@ if __name__ == '__main__':
     # img = Image.open(tif_file)
     # matrix = np.array(img,dtype=np.float32)
     # print(img.info)
-    width=15
+    width=3
     add_noise=True
     only_bg=False
     if add_noise:
@@ -99,10 +98,11 @@ if __name__ == '__main__':
     #pil_image.save(new_tif)
     time_start=time.time()
     #y=y=x0+x1*x+x2*x**2
-    y0,y1,y2=1201,1.72e-02,8.77e-08
-    img_matrix=generate_2st_curve_tif(width=width,y0=y0,y1=y1,y2=y2,tif_shape=(2048,2052),
-                add_noise=add_noise,linear_noise=True,liner_aspect=0.02,only_bg=only_bg)
-    plt.subplot(1,2,1),plt.imshow(img_matrix,cmap=cm.rainbow,vmin=1300,vmax=1400)
+    para=(1201,1.72e-02,8.77e-08)
+    para=(1201,1.72e-02,8.77e-05)
+    img_matrix=generate_2st_curve_tif(width=width,paras=para,tif_shape=(2048,2052),
+                add_noise=add_noise,linear_noise=True,liner_aspect=0.02,only_bg=only_bg,base_I=10)
+    plt.subplot(1,2,1),plt.imshow(img_matrix,cmap=cm.rainbow)
     plt.colorbar(location='bottom', fraction=0.1),plt.title("generate curve image")
     # select one row to plot
     #print(img_matrix[1])

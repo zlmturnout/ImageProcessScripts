@@ -33,7 +33,7 @@ def detectorclean(exp, noise1, noise2,thresholdUP=0.95,thresholdDOWN=0.05):
     detectorcleanout = exp
     return detectorcleanout
 
-def median_filter(matrix:np.array([]),filter_N:int=3):
+def median_filter(matrix:np.array,filter_N:int=3):
     median_matrix=cv2.medianBlur(matrix, filter_N)
     return median_matrix
 
@@ -48,7 +48,7 @@ def clear_bg(exp):
         temp[i, :] = exp[i, :] - exp_bg
     return u, v, temp
 
-def tif_preprocess(tif_data:np.array([]),detector_clean:bool=True,cv_filter:bool=True):
+def tif_preprocess(tif_data:np.array,detector_clean:bool=True,cv_filter:bool=True):
     """preprocess the input img data into denoised and clean_background data
     protocol:
     1. median filter
@@ -141,7 +141,7 @@ def save_pd_data(pd_data: pd.DataFrame, path, filename: str):
     print('save to excel xlsx file successfully')
     #print(f'save to excel xlsx file {excel_file_path} successfully')
 
-def direct_addrows_FWHM(full_data:np.array([]),p_col:int=935,save_folder:str='./',filename:str='direct_addrows'):
+def direct_addrows_FWHM(full_data:np.array,p_col:int=935,save_folder:str='./',filename:str='direct_addrows'):
     """find the FWHM by direct addtion of all rows
 
     Args:
@@ -162,7 +162,7 @@ def direct_addrows_FWHM(full_data:np.array([]),p_col:int=935,save_folder:str='./
         print(f'estimate FWHM failed')
     return Fit_results
 
-def find_peak_center(slice_data:np.array([]))->float:
+def find_peak_center(slice_data:np.array)->float:
     """find the Gauss peak center in each slice
 
     Args:
@@ -184,7 +184,7 @@ def find_peak_center(slice_data:np.array([]))->float:
     else:
         return half_col
 
-def get_slice_peaks(matrix_data:np.array([]),slice_n:int=100,p_col:int=935)->tuple:
+def get_slice_peaks(matrix_data:np.array,slice_n:int=100,p_col:int=935)->tuple:
     """find the peak center (p_col) in n slice of theinput matrix_data with shape(200*2048)=(column,row)
         for line fit func:y=a+b*x+c*x^2
         a is constant
@@ -213,7 +213,7 @@ def get_slice_peaks(matrix_data:np.array([]),slice_n:int=100,p_col:int=935)->tup
 def peak_curve_func(x,a:float,b:float,c:float):
     return a+b*x+c*x**2
 
-def peakline_curve_fit(x_list:np.array([]),y_list:np.array([])):
+def peakline_curve_fit(x_list:np.array,y_list:np.array):
     fit_status=True
     try:
         popt, pcov = curve_fit(peak_curve_func, x_list, y_list) # 拟合方程，参数包括func，xdata，ydata，
@@ -232,7 +232,7 @@ def cal_shift_pixel(index:int,p_col:int,a,b,c):
     """
     return round(a+b*index+index**2*c-p_col)
 
-def shift_arrray(array:np.array([]),n:int=0):
+def shift_arrray(array:np.array,n:int=0):
     """shift a array by n position to positive is shift left else right
 
     Args:
@@ -241,7 +241,7 @@ def shift_arrray(array:np.array([]),n:int=0):
     """
     return np.append(array[n:],array[:n])
 
-def correlation_FWHM(peak_data:np.array([]),slice_n:int=20,p_col:int=935,save_folder:str='./',filename:str='Tif_img'):
+def correlation_FWHM(peak_data:np.array,slice_n:int=20,p_col:int=935,save_folder:str='./',filename:str='Tif_img'):
     """find the FWHM results by correlation methods
     slices->peak center->curve-fit->shif each rows->final peak-line
     Args:
@@ -300,7 +300,7 @@ def plot_GaussFit_results(Fit_results:dict,save_folder:str='./',title:str='Gauss
     save_fig=os.path.join(save_folder,f'FWHM_{Fit_results["info"]}_{title}.jpg')
     plt.savefig(save_fig)
     
-def minimal_FWHM_correlation(peak_data:np.array([]),slice_n:int=100,p_col:int=935,save_folder:str='./',filename:str='Tif_img'):
+def minimal_FWHM_correlation(peak_data:np.array,slice_n:int=100,p_col:int=935,save_folder:str='./',filename:str='Tif_img'):
     row,column=peak_data.shape
     min_FWHM=column
     min_result=[]
@@ -328,7 +328,7 @@ def minimal_FWHM_correlation(peak_data:np.array([]),slice_n:int=100,p_col:int=93
     print(f'find minimal FWHM={min_result[1]:.4f} with parameter {min_result[-1]}')
     return min_result
 
-def get_correlation_img(peak_data:np.array([]),fit_para:list,p_col:int=935,dis_const:float=29.3,vmin:int=1300,vmax:int=1380,save_folder:str='./',filename:str='correctedPeak_img',E_in:float=443.5,E_ref:float=540,Xpixel_bg_i:int=500):
+def get_correlation_img(peak_data:np.array,fit_para:list,p_col:int=935,dis_const:float=29.3,vmin:int=1300,vmax:int=1380,save_folder:str='./',filename:str='correctedPeak_img',E_in:float=443.5,E_ref:float=540,Xpixel_bg_i:int=500):
     """correct raw image based on the fit_parameter of peak-line,peak center at p_col
     fit_para:[a,b,c] means y=a+b*x+c*x**2
 

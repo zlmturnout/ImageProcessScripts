@@ -13,7 +13,9 @@ models/
 *.pdf
 # gitignore
 #.gitignore
-
+*.npz
+output_*/
+*.h5
 # my ignore file
 *.log
 *.txt
